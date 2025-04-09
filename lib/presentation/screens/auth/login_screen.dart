@@ -1,8 +1,9 @@
-
 import 'package:flutter/material.dart';
 import '../../../core/constants/theme.dart';
 import '../../../core/widgets/ghana_widgets.dart';
 import '../../../routes.dart';
+// Import the AuthService from your core services
+import '../../../core/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -14,12 +15,42 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  final AuthService _authService = AuthService(); // Create an instance of AuthService
 
   @override
   void dispose() {
     _phoneController.dispose();
     _passwordController.dispose();
+    _authService.dispose(); // Dispose the auth service if needed
     super.dispose();
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  Future<void> _login() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Attempt to login using the AuthService
+      await _authService.login(_phoneController.text, _passwordController.text);
+      // Navigator.pushReplacementNamed(context, AppRoutes.home);
+      await _authService.requestOtp();
+    } catch (e) {
+      // On error, show an error message
+      _showError(e.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -93,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: 32),
               GhanaTextField(
                 label: 'Phone Number',
-                hint: '024 XXX XXXX',
+                hint: '024XXXXXXX',
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 prefixIcon: Icons.phone_android,
@@ -122,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
-                    // Navigate to forgot password
+                    // Navigate to forgot password screen
                   },
                   child: Text('Forgot Password?'),
                 ),
@@ -131,18 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
               GhanaButton(
                 text: 'Sign In',
                 isLoading: _isLoading,
-                onPressed: () {
-                  setState(() {
-                    _isLoading = true;
-                  });
-                  // Simulate authentication
-                  Future.delayed(Duration(seconds: 2), () {
-                    setState(() {
-                      _isLoading = false;
-                    });
-                    Navigator.pushReplacementNamed(context, AppRoutes.home);
-                  });
-                },
+                onPressed: _login,
               ),
               SizedBox(height: 24),
               Center(

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/theme.dart';
 import '../../../core/widgets/ghana_widgets.dart';
 import '../../../routes.dart';
+// Import the AuthService from your core services
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/token_storage_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -9,37 +12,73 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _acceptedTerms = false;
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _handleSignUp() {
+  void _handleSignUp() async {
     if (!_acceptedTerms) return;
     
     setState(() {
       _isLoading = true;
     });
+
+    // make call for registration
+    try {
+      await _authService.register(
+        firstName: _firstNameController.text,
+        lastName: _lastNameController.text,
+        phoneNumber: _phoneController.text,
+        email: _emailController.text,
+        password: _passwordController.text,
+        userType: 'rider',
+      );
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+      }
+    }
+    catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      // Handle error (e.g., show a snackbar)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Registration failed: $e'),
+          backgroundColor: ghanaRed,
+        ),
+      );
+      return;
+    }
+    finally {
+      // Always set loading to false after the operation
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
     
-    // Simulate registration
-    Future.delayed(Duration(seconds: 2), () {
-      setState(() {
-        _isLoading = false;
-      });
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
-    });
+    
   }
 
   @override
@@ -77,9 +116,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               SizedBox(height: 32),
               GhanaTextField(
-                label: 'Full Name',
-                hint: 'Enter your full name',
-                controller: _nameController,
+                label: 'First Name',
+                hint: 'Enter your first name',
+                controller: _firstNameController,
+                prefixIcon: Icons.person_outline,
+              ),
+              SizedBox(height: 24),
+              GhanaTextField(
+                label: 'Last Name',
+                hint: 'Enter your Last name',
+                controller: _lastNameController,
                 prefixIcon: Icons.person_outline,
               ),
               SizedBox(height: 24),
