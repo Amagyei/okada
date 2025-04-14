@@ -6,12 +6,24 @@ import 'presentation/screens/trips/trips_screen.dart';
 import 'presentation/screens/profile/profile_screen.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/register_screen.dart';
+import 'presentation/screens/auth/otp_entry_screen.dart';
 import 'presentation/screens/payment/payment_screen.dart';
 import 'presentation/screens/profile/personal_info_screen.dart';
 import 'presentation/screens/profile/saved_locations_screen.dart';
 import 'presentation/screens/profile/rate_drivers_screen.dart';
 import 'presentation/screens/profile/support_screen.dart';
 import 'presentation/screens/profile/settings_screen.dart';
+
+class UndefinedView extends StatelessWidget {
+  final String? name;
+  const UndefinedView({Key? key, this.name}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(child: Text('Route for $name is not defined')),
+    );
+  }
+}
 
 class AppRoutes {
   static const String splash = '/';
@@ -27,6 +39,7 @@ class AppRoutes {
   static const String rateDrivers = '/profile/rate-drivers';
   static const String support = '/profile/support';
   static const String settings = '/profile/settings';
+  static const String otp = '/otp_entry';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     // Using if-else statements instead of switch with pattern matching
@@ -56,14 +69,24 @@ class AppRoutes {
       return MaterialPageRoute(builder: (_) => SupportScreen());
     } else if (settings.name == settings) {
       return MaterialPageRoute(builder: (_) => SettingsScreen());
+    }  else if (settings.name == otp) {
+      // Extract the argument safely
+      final phoneNumber = settings.arguments as String?;
+      if (phoneNumber != null) {
+        // Pass the extracted argument correctly to the OtpEntryScreen constructor
+        return MaterialPageRoute(
+          builder: (_) => OtpEntryScreen(phoneNumber: phoneNumber),
+        );
+      } else {
+        // Handle cases where the argument is missing (critical for robustness)
+        print("Error: OTP screen accessed without phone number argument.");
+        // Fallback to login screen or show an error page
+        return MaterialPageRoute(builder: (_) => LoginScreen());
+      }
+    
     } else {
-      return MaterialPageRoute(
-        builder: (_) => Scaffold(
-          body: Center(
-            child: Text('No route defined for ${settings.name}'),
-          ),
-        ),
-      );
+      // Fallback for undefined routes
+      return MaterialPageRoute(builder: (_) => UndefinedView(name: settings.name));
     }
   }
 }

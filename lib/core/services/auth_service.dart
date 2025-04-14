@@ -94,7 +94,6 @@ class AuthService {
         refreshToken: authResponse.refresh,
       );
       print('AuthService: Login successful, tokens saved.');
-      await requestOtp(); // Request OTP after successful login
       return authResponse;
     } catch (e) {
       print("AuthService: Login failed - $e");
@@ -156,11 +155,20 @@ class AuthService {
   }
 
   // --- Request OTP ---
-  Future<void> requestOtp() async {
+  Future<void> requestOtp(
+    {required String phoneNumber}
+  ) async {
     final url = Uri.parse('$_baseUrl/auth/otp/request/');
     print('AuthService: Requesting OTP');
     try {
-      final response = await _client.post(url);
+      final Map<String, dynamic> requestBody = {
+        'phone_number': phoneNumber,
+      };
+      final response = await _client.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(requestBody),
+      );
       _handleResponse(response);
       print('AuthService: OTP Request successful.');
     } catch (e) {
@@ -173,15 +181,18 @@ class AuthService {
   }
 
   // --- Verify OTP ---
-  Future<void> verifyOtp(String otp) async {
+  Future<void> verifyOtp(String otp, String phoneNumber) async {
     final url = Uri.parse('$_baseUrl/auth/otp/verify/');
     print('AuthService: Verifying OTP $otp');
 
     try {
       final response = await _client.post(
         url,
+        headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'otp': otp,
+          'code': otp,
+          'number': phoneNumber,
+          
         }),
       );
       _handleResponse(response);

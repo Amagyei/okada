@@ -30,7 +30,7 @@ class TokenStorageService {
       print("TokenStorageService: Tokens saved successfully.");
     } catch (e) {
       print("TokenStorageService: Error saving tokens - $e");
-      rethrow; // Optionally rethrow to allow calling code to handle errors
+      rethrow;
     }
   }
 

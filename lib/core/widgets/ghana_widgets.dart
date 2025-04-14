@@ -3,7 +3,7 @@ import '../constants/theme.dart';
 
 class GhanaButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isLoading;
   final IconData? icon;
   final double width;

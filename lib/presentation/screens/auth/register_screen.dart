@@ -4,7 +4,6 @@ import '../../../core/widgets/ghana_widgets.dart';
 import '../../../routes.dart';
 // Import the AuthService from your core services
 import '../../../core/services/auth_service.dart';
-import '../../../core/services/token_storage_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -22,6 +21,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _acceptedTerms = false;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
@@ -34,52 +34,73 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _handleSignUp() async {
-    if (!_acceptedTerms) return;
-    
-    setState(() {
-      _isLoading = true;
-    });
+  // Validate the form first
+  if (!(_formKey.currentState?.validate() ?? false)) {
+    print("Form validation failed.");
+    return;
+  }
+  // Check if terms are accepted
+  if (!_acceptedTerms) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Please accept the terms and conditions to continue'),
+        backgroundColor: ghanaRed,
+      ),
+    );
+    print("Terms not accepted.");
+    return;
+  }
 
-    // make call for registration
-    try {
-      await _authService.register(
-        firstName: _firstNameController.text,
-        lastName: _lastNameController.text,
-        phoneNumber: _phoneController.text,
-        email: _emailController.text,
-        password: _passwordController.text,
-        userType: 'rider',
+  // Update UI to show loading
+  setState(() { _isLoading = true; });
+  print("Starting registration...");
+
+  // Define variables from controllers
+  String phoneNumber = _phoneController.text.trim();
+  String email = _emailController.text.trim();
+
+  try {
+    // Register the new user
+    await _authService.register(
+      firstName: _firstNameController.text,
+      lastName: _lastNameController.text,
+      phoneNumber: phoneNumber,
+      email: email,
+      password: _passwordController.text,
+      userType: 'rider',
+    );
+    print("Registration successful, navigating to OTP page.");
+    if (mounted) {
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.otp,
+        arguments: phoneNumber,
       );
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
-      }
     }
-    catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-      // Handle error (e.g., show a snackbar)
+  } catch (e) {
+    print("Registration failed with error: $e");
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+      // Display error using SnackBar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Registration failed: $e'),
           backgroundColor: ghanaRed,
         ),
       );
-      return;
     }
-    finally {
-      // Always set loading to false after the operation
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    return;
+  } finally {
+    // Always update the loading state after the operation
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
-    
-    
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -209,7 +230,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   text: 'Sign Up',
                   isLoading: _isLoading,
                   onPressed: _acceptedTerms ? _handleSignUp : () {
-                    // Show a snackbar if terms not accepted
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Please accept the terms and conditions to continue'),
