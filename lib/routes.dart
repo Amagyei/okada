@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'presentation/screens/splash/splash_screen.dart';
 import 'presentation/screens/home/home_screen.dart';
 import 'presentation/screens/booking/booking_screen.dart';
@@ -13,6 +15,8 @@ import 'presentation/screens/profile/saved_locations_screen.dart';
 import 'presentation/screens/profile/rate_drivers_screen.dart';
 import 'presentation/screens/profile/support_screen.dart';
 import 'presentation/screens/profile/settings_screen.dart';
+import 'providers/auth_providers.dart';
+import 'state/auth_state.dart';
 
 class UndefinedView extends StatelessWidget {
   final String? name;
@@ -41,7 +45,29 @@ class AppRoutes {
   static const String settings = '/profile/settings';
   static const String otp = '/otp_entry';
 
-  static Route<dynamic> generateRoute(RouteSettings settings) {
+  // Define protected routes
+  static const protectedRoutes = {
+    home, book, trips, profile, payment, personalInfo,
+    savedLocations, rateDrivers, support, settings
+  };
+
+  static Route<dynamic> generateRoute(RouteSettings settings, BuildContext context) {
+    // Get authentication state using Riverpod
+    final authState = ProviderScope.containerOf(context).read(authNotifierProvider);
+
+    // Redirect unauthenticated users trying to access protected routes
+    if (protectedRoutes.contains(settings.name)) {
+      if (authState.status != AuthStatus.authenticated) {
+        return MaterialPageRoute(
+          builder: (_) => LoginScreen(),
+          settings: RouteSettings(
+            name: AppRoutes.login,
+            arguments: settings.name // Preserve original target
+          ),
+        );
+      }
+    }
+
     // Using if-else statements instead of switch with pattern matching
     if (settings.name == splash) {
       return MaterialPageRoute(builder: (_) => SplashScreen());
@@ -69,23 +95,16 @@ class AppRoutes {
       return MaterialPageRoute(builder: (_) => SupportScreen());
     } else if (settings.name == settings) {
       return MaterialPageRoute(builder: (_) => SettingsScreen());
-    }  else if (settings.name == otp) {
-      // Extract the argument safely
+    } else if (settings.name == otp) {
       final phoneNumber = settings.arguments as String?;
       if (phoneNumber != null) {
-        // Pass the extracted argument correctly to the OtpEntryScreen constructor
         return MaterialPageRoute(
           builder: (_) => OtpEntryScreen(phoneNumber: phoneNumber),
         );
       } else {
-        // Handle cases where the argument is missing (critical for robustness)
-        print("Error: OTP screen accessed without phone number argument.");
-        // Fallback to login screen or show an error page
         return MaterialPageRoute(builder: (_) => LoginScreen());
       }
-    
     } else {
-      // Fallback for undefined routes
       return MaterialPageRoute(builder: (_) => UndefinedView(name: settings.name));
     }
   }

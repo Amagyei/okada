@@ -278,6 +278,8 @@ class GhanaTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final IconData? prefixIcon;
   final Widget? suffix;
+  final bool readOnly; 
+  final bool enabled;  
 
   const GhanaTextField({
     Key? key,
@@ -289,6 +291,8 @@ class GhanaTextField extends StatelessWidget {
     this.validator,
     this.prefixIcon,
     this.suffix,
+    this.readOnly = false, 
+    this.enabled = true,   
   }) : super(key: key);
 
   @override
@@ -301,7 +305,7 @@ class GhanaTextField extends StatelessWidget {
             label,
             style: TextStyle(
               fontWeight: FontWeight.w500,
-              color: textPrimary,
+              color: enabled ? textPrimary : textSecondary.withOpacity(0.6),
             ),
           ),
           SizedBox(height: 8),
@@ -311,9 +315,16 @@ class GhanaTextField extends StatelessWidget {
           keyboardType: keyboardType,
           obscureText: obscureText,
           validator: validator,
+          readOnly: readOnly,   
+          enabled: enabled, 
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
+            prefixIcon: prefixIcon != null
+                ? Icon(
+                    prefixIcon,
+                    color: enabled ? null : textSecondary.withOpacity(0.6),
+                  )
+                : null,
             suffix: suffix,
           ),
         ),

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
 import '../../../core/constants/theme.dart';
 import '../../../core/widgets/ghana_widgets.dart';
 import '../../../routes.dart';
+import '../../../providers/auth_providers.dart'; // Import your providers
+import '../../../data/models/user_model.dart'; // Import User model
 
 class ProfileMenuItem {
   final String title;
@@ -17,7 +20,8 @@ class ProfileMenuItem {
   });
 }
 
-class ProfileScreen extends StatelessWidget {
+// Change StatelessWidget to ConsumerWidget
+class ProfileScreen extends ConsumerWidget {
   final List<ProfileMenuItem> _menuItems = [
     ProfileMenuItem(
       title: 'Personal Information',
@@ -58,13 +62,32 @@ class ProfileScreen extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  // Add WidgetRef ref to the build method
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the auth state
+    final authState = ref.watch(authNotifierProvider);
+    final user = authState.user; // Get the user object
+
+    // Handle case where user might somehow be null even if authenticated
+    // Although AuthWrapper should prevent this screen from being shown if not authenticated
+    if (user == null) {
+      // Optionally show a loading indicator or an error, or trigger logout
+      // For simplicity, show a basic loading/error state
+      return Scaffold(
+        body: Center(
+          child: Text('Error: User data not available. Please log in again.'),
+        ),
+      );
+      // Consider calling ref.read(authNotifierProvider.notifier).logout(); ?
+    }
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
-              _buildProfileHeader(context),
+              // Pass the user data to the header builder
+              _buildProfileHeader(context, user),
               SizedBox(height: 24),
               ListView.separated(
                 physics: NeverScrollableScrollPhysics(),
@@ -73,7 +96,8 @@ class ProfileScreen extends StatelessWidget {
                 separatorBuilder: (context, index) => SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final item = _menuItems[index];
-                  return GhanaCard(
+                  // Ensure GhanaCard is implemented or replace with standard Card/InkWell
+                  return GhanaCard( // Assuming GhanaCard takes onTap
                     elevation: 0.5,
                     onTap: () {
                       Navigator.pushNamed(context, item.route);
@@ -127,11 +151,14 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
               SizedBox(height: 40),
-              GhanaButton(
+              GhanaButton( // Assuming GhanaButton can take an icon
                 text: 'Log Out',
-                onPressed: () => _showLogoutDialog(context),
+                // Pass ref to the dialog function or read inside onPressed
+                onPressed: () => _showLogoutDialog(context, ref),
                 icon: Icons.logout,
                 width: MediaQuery.of(context).size.width * 0.9,
+                // Add style if needed, e.g., red color for logout
+                // style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               ),
               SizedBox(height: 20),
             ],
@@ -141,7 +168,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context) {
+  // Update header to accept User object
+  Widget _buildProfileHeader(BuildContext context, User user) {
     return Container(
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -162,44 +190,49 @@ class ProfileScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: ghanaWhite, width: 2),
-                  color: ghanaGold.withOpacity(0.2),
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.person,
-                    size: 50,
-                    color: ghanaWhite,
-                  ),
-                ),
+              // Display profile picture or fallback icon/initials
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: ghanaGold.withOpacity(0.2),
+                 // Add border using foregroundDecoration if needed or wrap with Container
+                backgroundImage: (user.profilePicture != null && user.profilePicture!.isNotEmpty)
+                  ? NetworkImage(user.profilePicture!) // Assumes URL
+                  : null, // No background image if no URL
+                 child: (user.profilePicture == null || user.profilePicture!.isEmpty)
+                   ? Icon( // Fallback icon
+                       Icons.person,
+                       size: 50,
+                       color: ghanaWhite,
+                     )
+                   : null, // No child needed if backgroundImage is set
               ),
               SizedBox(width: 20),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Display user's full name
                     Text(
-                      'Kwame Mensah',
+                      user.fullName, // Use getter from User model
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: ghanaWhite,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 4),
+                    // Display user's phone number
                     Text(
-                      '024 123 4567',
+                      user.phoneNumber,
                       style: TextStyle(
                         color: ghanaWhite.withOpacity(0.9),
                         fontSize: 16,
                       ),
                     ),
                     SizedBox(height: 4),
+                    // Display user's rating and ride count
                     Row(
                       children: [
                         Icon(
@@ -209,7 +242,8 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         SizedBox(width: 4),
                         Text(
-                          '4.8',
+                          // Display rating or 'N/A'
+                          user.rating?.isNotEmpty == true ? user.rating! : 'N/A',
                           style: TextStyle(
                             color: ghanaWhite,
                             fontWeight: FontWeight.bold,
@@ -217,7 +251,8 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         SizedBox(width: 4),
                         Text(
-                          '(32 rides)',
+                          // Display total trips or '0'
+                          '(${user.totalTrips ?? 0} rides)',
                           style: TextStyle(
                             color: ghanaWhite.withOpacity(0.9),
                             fontSize: 12,
@@ -234,6 +269,7 @@ class ProfileScreen extends StatelessWidget {
                   color: ghanaWhite,
                 ),
                 onPressed: () {
+                  // Ensure this route exists and PersonalInfoScreen is implemented
                   Navigator.pushNamed(context, AppRoutes.personalInfo);
                 },
               ),
@@ -253,11 +289,14 @@ class ProfileScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatItem('32', 'Rides'),
-                _buildDivider(),
-                _buildStatItem('12', 'Saved Places'),
-                _buildDivider(),
-                _buildStatItem('GH₵ 450', 'Spent'),
+                // Display total trips stat
+                _buildStatItem((user.totalTrips ?? 0).toString(), 'Rides'),
+                // You can add other relevant stats from the User model if available
+                // e.g., User Type if needed, but less of a "stat"
+                // _buildDivider(),
+                // _buildStatItem('12', 'Saved Places'), // Placeholder or remove
+                // _buildDivider(),
+                // _buildStatItem('GH₵ 450', 'Spent'), // Placeholder or remove
               ],
             ),
           ),
@@ -297,7 +336,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  // Update logout dialog to use ref
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -310,11 +350,15 @@ class ProfileScreen extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: ghanaGreen,
+              backgroundColor: ghanaGreen, // Or Colors.red
             ),
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, AppRoutes.login);
+              Navigator.pop(context); // Close the dialog first
+              // Call logout on the notifier using ref.read
+              ref.read(authNotifierProvider.notifier).logout();
+              // No need for Navigator.pushReplacementNamed here,
+              // AuthWrapper will handle navigating to LoginScreen
+              // when the authState status changes to unauthenticated.
             },
             child: Text('Log Out'),
           ),

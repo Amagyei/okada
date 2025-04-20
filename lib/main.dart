@@ -1,8 +1,10 @@
-
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'routes.dart';
 import 'core/constants/theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/widgets/auth_wrapper.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,7 +12,9 @@ void main() {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  runApp(OkadaApp());
+  runApp(
+    ProviderScope(child: OkadaApp())
+  );
 }
 
 class OkadaApp extends StatelessWidget {
@@ -20,8 +24,8 @@ class OkadaApp extends StatelessWidget {
       title: 'Okada',
       debugShowCheckedModeBanner: false,
       theme: okadaTheme,
-      initialRoute: AppRoutes.splash,
+      home: AuthWrapper(), // Make AuthWrapper the root
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }
-}
+} 

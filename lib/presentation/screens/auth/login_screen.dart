@@ -1,36 +1,35 @@
+// lib/presentation/auth/login
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
 import '../../../core/constants/theme.dart';
 import '../../../core/widgets/ghana_widgets.dart';
 import '../../../routes.dart';
-import '../../../core/services/auth_service.dart';
-import '../../../data/models/auth_response_model.dart';
-import '../../../data/models/user_model.dart';
 
+import '../../../providers/auth_providers.dart'; // Import provider definition
+import '../../../state/auth_state.dart';      // Import state definition
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _isLoading = false;
+  
   bool _obscurePassword = true;
-  final AuthService _authService = AuthService();
+  
   final _formKey = GlobalKey<FormState>();
-
 
   @override
   void dispose() {
     _phoneController.dispose();
     _passwordController.dispose();
-    _authService.dispose();
     super.dispose();
   }
 
   void _showError(String message) {
-     if (!mounted) return;
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
@@ -39,43 +38,45 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
-     }
+    }
     String phoneNumber = _phoneController.text.trim();
-    setState(() { _isLoading = true; });
-
+    // Get the notifier instance using ref.read (for calling methods)
+    final authNotifier = ref.read(authNotifierProvider.notifier);
 
     try {
-      final AuthResponse authResponse = await _authService.login(phoneNumber, _passwordController.text);
+      
+      await authNotifier.login(phoneNumber, _passwordController.text);
+
+      final latestAuthState = ref.read(authNotifierProvider);
+
       if (!mounted) return;
 
-      if (authResponse.user.isPhoneVerified) {
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
-      } else {
-        Navigator.pushReplacementNamed(context, AppRoutes.otp, arguments: phoneNumber);
+      if (latestAuthState.status == AuthStatus.authenticated) {
+        if (latestAuthState.user?.isPhoneVerified ?? false) {
+          Navigator.pushReplacementNamed(context, AppRoutes.home);
+        } else {
+          Navigator.pushReplacementNamed(context, AppRoutes.otp, arguments: phoneNumber);
+        }
       }
-
+      
     } catch (e) {
-       if (mounted) {
-         _showError(e.toString().replaceFirst("Exception: ", ""));
-       }
-    } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        _showError(e.toString().replaceFirst("Exception: ", ""));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authNotifierProvider);
+    final isLoading = authState.status == AuthStatus.authenticating;
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Container(
           padding: EdgeInsets.all(24),
-          // Wrap content in a Form
           child: Form(
-            key: _formKey, // Assign form key
+            key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -141,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(height: 32),
                 GhanaTextField(
                   label: 'Phone Number',
-                  hint: 'e.g. 024XXXXXXX', // Updated hint
+                  hint: 'e.g. 024XXXXXXX',
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   prefixIcon: Icons.phone_android,
@@ -149,7 +150,6 @@ class _LoginScreenState extends State<LoginScreen> {
                      if (value == null || value.trim().isEmpty) {
                        return 'Please enter phone number';
                      }
-                     // Basic 10 digit check - adjust regex if needed for Ghana format
                      if (!RegExp(r'^[0-9]{10}$').hasMatch(value.trim())) {
                         return 'Enter a valid 10-digit phone number';
                      }
@@ -169,6 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: textSecondary,
                     ),
                     onPressed: () {
+                      // Use local setState ONLY for local UI state like password visibility
                       setState(() {
                         _obscurePassword = !_obscurePassword;
                       });
@@ -189,13 +190,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(height: 32),
                 GhanaButton(
                   text: 'Sign In',
-                  isLoading: _isLoading,
-                  onPressed: _isLoading ? null : () { _login(); },
+                  // Use isLoading from the watched notifier state
+                  isLoading: isLoading,
+                  // Pass the _login method directly or wrapped if needed
+                  onPressed: isLoading ? null : _login,
                 ),
                 SizedBox(height: 24),
                 Center(
                   child: TextButton(
-                    onPressed: () {
+                    onPressed: isLoading ? null : () {
                       Navigator.pushNamed(context, AppRoutes.register);
                     },
                     child: RichText(
