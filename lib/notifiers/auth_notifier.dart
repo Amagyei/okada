@@ -1,4 +1,4 @@
-// lib/notifiers/auth_notifier.dart (Create directory/file)
+// lib/notifiers/auth_notifier.dart 
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:okada_app/core/services/auth_service.dart';
