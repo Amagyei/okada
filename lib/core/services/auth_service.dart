@@ -5,9 +5,10 @@ import 'package:http/http.dart' as http; // Standard HTTP client
 
 // --- Adjust these import paths based on your project structure ---
 import '../../data/models/auth_response_model.dart';
-import 'token_storage_service.dart'; // Ensure this path is correct
-import 'api_client.dart';          // Import the API client setup (with interceptors)
-import 'api_error_model.dart'; // Adjust path if needed
+import '../../data/models/user_model.dart';
+import 'token_storage_service.dart';
+import 'api_client.dart';          
+import 'api_error_model.dart';
 
 /// AuthService: Handles all authentication-related API interactions.
 ///
@@ -25,6 +26,29 @@ class AuthService {
   final http.Client _client = createApiClient();
   // Local storage for tokens
   final TokenStorageService _tokenStorageService = TokenStorageService();
+
+  Future<User> getUserProfile() async {
+    final url = Uri.parse('$_baseUrl/users/me/'); 
+    print('AuthService: Fetching user profile from $url');
+
+    try {
+      // Use the intercepted client which adds the auth token automatically
+      final response = await _client.get(url);
+
+      // Use _handleResponse to check for errors (like 401) and decode JSON
+      final responseBody = _handleResponse(response);
+
+      // Parse the user data from the response body
+      final user = User.fromJson(responseBody as Map<String, dynamic>);
+      print('AuthService: User profile fetched successfully for ${user.username}');
+      return user;
+
+    } catch (e) {
+      print("AuthService: Failed to get user profile - $e");
+      // Re-throw the exception so the notifier can catch it
+      rethrow;
+    }
+  }
 
   // --- Helper to handle API responses consistently ---
   /// Processes HTTP response, handling success and common error patterns.
@@ -181,30 +205,26 @@ class AuthService {
   }
 
   // --- Verify OTP ---
-  Future<void> verifyOtp(String otp, String phoneNumber) async {
+  Future<void> verifyOtp(String otp) async { // REMOVE phoneNumber parameter
     final url = Uri.parse('$_baseUrl/auth/otp/verify/');
-    print('AuthService: Verifying OTP $otp');
+    print('AuthService: Verifying OTP $otp'); // Log OTP being sent
 
     try {
-      final response = await _client.post(
+    final response = await _client.post( // client handles auth token via interceptor
         url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'code': otp,
-          'number': phoneNumber,
-          
-        }),
-      );
-      _handleResponse(response);
-      print('AuthService: OTP Verification successful.');
+        // No need to send phoneNumber in body if backend uses authenticated user
+        body: json.encode({'otp': otp}),
+    );
+    _handleResponse(response); // Check for success/failure
+    print('AuthService: OTP Verification successful.');
     } catch (e) {
-      print("AuthService: OTP Verification failed - $e");
-      if (e is! Exception) {
+    print("AuthService: OTP Verification failed - $e");
+    if (e is! Exception) {
         throw Exception('Unable to connect. Please check network.');
-      }
-      rethrow;
     }
-  }
+    rethrow;
+    }
+}
 
   // --- Password Reset Request ---
   Future<void> requestPasswordReset(String phoneNumber) async {
