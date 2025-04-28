@@ -11,6 +11,9 @@ import 'token_storage_service.dart';
 import 'api_client.dart';          // Import the API client setup (with interceptors)
 import 'api_error_model.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Needed if reading provider here
+import 'package:okada_app/providers/config_provider.dart';
+
 class AuthService {
   // --- Configuration ---
   final String _baseUrl = const String.fromEnvironment(

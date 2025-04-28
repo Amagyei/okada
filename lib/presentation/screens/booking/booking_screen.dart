@@ -53,7 +53,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   bool _isFetchingPlaceDetails = false;
 
   // API Key from .env
-  final String _googleApiKey = 'AIzaSyCXiEOWU-1EsfTuL9PQ4negxlFQqN3XXB8';
+  final String _googleApiKey = 'AIzaSyAKL2jbKsO2XHoreH_sxQ8243AkOB1GbkA';
 
   // Focus Nodes to control focus between fields
   final FocusNode _pickupFocusNode = FocusNode();
@@ -207,8 +207,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     // *** Also ensure general unfocus happens ***
     FocusScope.of(context).unfocus();
 
-    if (prediction.placeId == null) { /* ... error handling ... */ setState(() => _isFetchingPlaceDetails = false); return; }
-    if (_googleApiKey == 'MISSING_API_KEY') { /* ... error handling ... */ setState(() => _isFetchingPlaceDetails = false); return; }
+    if (prediction.placeId == null) { _showError("Could not get place details (Missing Place ID)."); setState(() => _isFetchingPlaceDetails = false); return; }
+    if (_googleApiKey == 'MISSING_API_KEY') { _showError("Map search unavailable: API key missing."); setState(() => _isFetchingPlaceDetails = false); return; }
 
     print("[BookingScreen] Fetching details for $fieldType - Place ID: ${prediction.placeId}");
 
@@ -238,28 +238,39 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 _pickupController.text = placeName;
                 _pickupController.selection = TextSelection.fromPosition(TextPosition(offset: _pickupController.text.length));
                 _updateMarkersDirectly('pickup', coords, 'Pickup: $placeName');
-                 // Don't automatically move focus here, let user decide
-                 // FocusScope.of(context).requestFocus(_destinationFocusNode);
               } else {
                 _destinationLatLng = coords;
                 _destinationController.text = placeName;
                 _destinationController.selection = TextSelection.fromPosition(TextPosition(offset: _destinationController.text.length));
                 _updateMarkersDirectly('destination', coords, 'Destination: $placeName');
-                 // Keep unfocus here
-                 _destinationFocusNode.unfocus();
               }
               _checkShowRideOptions();
             });
             _fetchEstimatedFare();
-          } else { /* ... error handling ... */ }
-        } else { /* ... error handling ... */ }
-      } else { /* ... error handling ... */ }
-    } on TimeoutException catch (_) { /* ... error handling ... */ }
-    catch (e) { /* ... error handling ... */ }
-    finally { if (mounted) setState(() => _isFetchingPlaceDetails = false); }
+          } else {
+             print("[BookingScreen] Places Details API Error: Lat/Lng missing.");
+            _showError("Failed to get location coordinates from API response.");
+          }
+        } else {
+          final String apiErrorMsg = data['error_message'] ?? data['status'] ?? 'Unknown API error';
+          print("[BookingScreen] Places Details API Error: $apiErrorMsg");
+          _showError("Failed to get location details: $apiErrorMsg");
+        }
+      } else {
+        print("[BookingScreen] Places Details HTTP Error: ${response.statusCode}");
+        _showError("Failed to get location details (HTTP ${response.statusCode}).");
+      }
+    } on TimeoutException catch (_) {
+        print("[BookingScreen] Error calling Place Details API: Timeout");
+        if (mounted) _showError("Getting location details timed out.");
+    } catch (e) {
+        print("[BookingScreen] Error calling Place Details API: $e");
+        if (mounted) _showError("Error getting location details: ${e.toString()}");
+    } finally {
+        if (mounted) setState(() => _isFetchingPlaceDetails = false);
+    }
   }
   // --- End Place Selection Handler ---
-
 
   // --- Check if Ride Options should be shown ---
   void _checkShowRideOptions() {
@@ -281,14 +292,18 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     print("[BookingScreen] Fetching estimated fare...");
     if (mounted) setState(() { _isFetchingFare = true; _estimatedFare = null; });
     try {
-      print("[BookingScreen] Simulating fare estimate API call..."); // TODO: Replace with actual API call
-      await Future.delayed(const Duration(milliseconds: 800));
-      final fare = 50.00; // Placeholder fare
-      print("[BookingScreen] Fare estimate received: $fare");
+      // *** Call the actual service method ***
+       final rideService = ref.read(rideServiceProvider);
+       final fare = await rideService.getEstimatedFare(
+         pickupCoords: _pickupLatLng!,
+         destinationCoords: _destinationLatLng!,
+       );
+      print("[BookingScreen] Fare estimate received from API: $fare");
       if (mounted) setState(() { _estimatedFare = fare; });
     } catch (e) {
-       print("[BookingScreen] Error fetching fare: $e");
-       if (mounted) _showError("Could not get fare: ${e.toString().replaceFirst("Exception: ", "")}");
+       print("[BookingScreen] Error fetching fare from API: $e");
+       if (mounted) _showError("Could not get fare estimate: ${e.toString().replaceFirst("Exception: ", "")}");
+       if (mounted) setState(() { _estimatedFare = null; });
     } finally {
        if (mounted) setState(() { _isFetchingFare = false; });
     }
@@ -296,6 +311,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   // --- Ride Request ---
   Future<void> _requestRide() async {
+     // Use addresses from controllers now
      final pickupAddress = _pickupController.text.trim();
      final destinationAddress = _destinationController.text.trim();
 
@@ -304,6 +320,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
      }
       if (_destinationLatLng == null || destinationAddress.isEmpty) {
         _showError("Please enter or select a valid destination."); return;
+     }
+     if (_estimatedFare == null) {
+        _showError("Could not get fare estimate. Please try again."); return;
      }
 
      print("[BookingScreen] Attempting ride request...");
@@ -314,6 +333,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         final ride = await rideService.createRideRequest(
            pickupCoords: _pickupLatLng!, pickupAddress: pickupAddress,
            destinationCoords: _destinationLatLng!, destinationAddress: destinationAddress,
+           estimatedFare: _estimatedFare!, // Pass the fetched fare
         );
         if (mounted) {
            print("[BookingScreen] Ride Requested! ID: ${ride.id}");
@@ -352,13 +372,11 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       extendBodyBehindAppBar: true,
       // *** Wrap body with GestureDetector ***
       body: GestureDetector(
-         // When tapping outside of focusable widgets (like TextFields), unfocus them
          onTap: () {
-            print("[BookingScreen] GestureDetector tapped - Unfocusing"); // Log tap
-            FocusScope.of(context).unfocus();
+            print("[BookingScreen] GestureDetector tapped - Unfocusing");
+            FocusScope.of(context).unfocus(); // Remove focus from any active field
          },
-         // Use opaque to catch taps on empty areas of the stack
-         behavior: HitTestBehavior.opaque,
+         behavior: HitTestBehavior.opaque, // Catch taps on empty areas
         child: Stack(
           children: [
             // --- Map View ---
@@ -375,8 +393,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                    print("[BookingScreen] Map Created/Updated.");
                    if (_pickupLatLng != null) { _animateMapToPosition(_pickupLatLng!); }
                 },
-                // *** Add onTap to Map to unfocus text fields ***
-                onTap: (LatLng position) {
+                onTap: (LatLng position) { // Unfocus on map tap
                    print("[BookingScreen] Map tapped - Unfocusing");
                    FocusScope.of(context).unfocus();
                 },
@@ -475,7 +492,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
          const SizedBox(height: 8),
          GooglePlaceAutoCompleteTextField(
            textEditingController: controller,
-           focusNode: focusNode,
+           focusNode: focusNode, // Assign focus node
            googleAPIKey: _googleApiKey,
            inputDecoration: InputDecoration(
              hintText: "Search $labelText",
@@ -495,6 +512,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                               constraints: const BoxConstraints(),
                               onPressed: !isApiKeyMissing ? () {
                                  controller.clear();
+                                 // Clear corresponding LatLng state when field cleared manually
                                  setState(() {
                                     if (fieldType == 'pickup') _pickupLatLng = null;
                                     else _destinationLatLng = null;
@@ -524,21 +542,20 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               // *** Explicitly unfocus after item click ***
               if (fieldType == 'pickup') _pickupFocusNode.unfocus();
               else _destinationFocusNode.unfocus();
-              // *** Let getPlaceDetailWithLatLng handle fetching details ***
+              // Let getPlaceDetailWithLatLng handle fetching details
            },
            itemBuilder: (context, index, Prediction prediction) {
-              return Material(
-                 color: Colors.transparent,
+              return Material( // Wrap with Material for InkWell splash effect
+                 color: Colors.transparent, // Avoid double background
                  child: InkWell(
                    onTap: () {
                       // Manually trigger selection logic when tapping item
                       _onPlaceSelected(prediction, fieldType);
                       // Update text field immediately
-                      controller.text = prediction.description ?? "";
-                      controller.selection = TextSelection.fromPosition(TextPosition(offset: prediction.description?.length ?? 0));
+                      // controller.text = prediction.description ?? ""; // This is handled by _onPlaceSelected now
+                      // controller.selection = TextSelection.fromPosition(TextPosition(offset: prediction.description?.length ?? 0));
                       // *** Explicitly unfocus after item tap ***
-                      if (fieldType == 'pickup') _pickupFocusNode.unfocus();
-                      else _destinationFocusNode.unfocus();
+                      // (Already handled in _onPlaceSelected now)
                    },
                    child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -555,6 +572,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
            },
            seperatedBuilder: Divider(height: 1, color: Colors.grey.shade200),
            isCrossBtnShown: false, // Use custom suffixIcon logic
+           // Disable search if API key is missing - Handled by checking _googleApiKey before use
          ),
        ],
      );
@@ -592,7 +610,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         GhanaButton(
           text: 'Request Okada Ride',
           isLoading: _isRequestingRide,
-          onPressed: (_isRequestingRide || _pickupLatLng == null || _destinationLatLng == null) ? null : _requestRide,
+          onPressed: (_isRequestingRide || _pickupLatLng == null || _destinationLatLng == null || _estimatedFare == null)
+              ? null
+              : _requestRide,
         ),
       ],
     );
