@@ -35,10 +35,14 @@ dependencies:
   cupertino_icons: ^1.0.8
   http_interceptor: ^2.0.0
   flutter_secure_storage: ^8.0.0
-  http: ^1.3.0
+  http: ^1.2.1
   flutter_riverpod: ^2.5.1
   google_maps_flutter: ^2.6.1
+  google_places_flutter: ^2.1.0
+  # google_maps_webservice: ^0.2.0 
+  flutter_dotenv: ^5.0.0
   geolocator: ^11.1.0
+  geocoding: ^2.2.0
   permission_handler: ^11.3.1
 
 dev_dependencies:

@@ -12,7 +12,10 @@ class AuthInterceptor implements InterceptorContract {
   Future<http.BaseRequest> interceptRequest({required http.BaseRequest request}) async {
     final token = await _tokenStorageService.getAccessToken();
     if (token != null && token.isNotEmpty) {
+      print("[AuthInterceptor] Adding Auth Header for request to ${request.url}"); // Add log
       request.headers.putIfAbsent('Authorization', () => 'Bearer $token');
+    } else {
+       print("[AuthInterceptor] No token found, NOT adding Auth Header for request to ${request.url}"); // Add log
     }
     // Explicitly set content-type and accept headers
     request.headers.putIfAbsent('Content-Type', () => 'application/json');

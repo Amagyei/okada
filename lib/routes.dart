@@ -75,7 +75,7 @@ class AppRoutes {
       return MaterialPageRoute(builder: (_) => RateDriversScreen());
     } else if (settings.name == support) {
       return MaterialPageRoute(builder: (_) => SupportScreen());
-    } else if (settings.name == settings) {
+    } else if (settings.name == AppRoutes.settings) {
       return MaterialPageRoute(builder: (_) => SettingsScreen());
     } else if (settings.name == otp) {
       final phoneNumber = settings.arguments as String?;
