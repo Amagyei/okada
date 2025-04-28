@@ -1,25 +1,66 @@
-
+//lib/presentation/home/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
+
 import '../../../core/constants/theme.dart';
 import '../../../core/widgets/ghana_widgets.dart';
 import '../../../routes.dart';
+import 'package:okada_app/providers/auth_providers.dart';
+
 import 'widgets/quick_route_card.dart';
 import 'widgets/trip_card.dart';
 
-class HomeScreen extends StatefulWidget {
+import 'package:okada_app/data/models/user_model.dart';
+
+
+class HomeScreen extends ConsumerStatefulWidget {
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  
+  // --- Logout Dialog Method ---
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext), // Close dialog
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ghanaGreen, // Use theme color
+            ),
+            onPressed: () {
+              Navigator.pop(dialogContext); // Close the dialog
+              // Read the notifier and call the logout method using ref
+              ref.read(authNotifierProvider.notifier).logout();
+              // AuthWrapper will automatically handle navigating to LoginScreen
+            },
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+  }
+  // --- End Logout Dialog Method ---
+
+  
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: _buildDrawer(),
+      drawer: _buildDrawer(context, ref),
       body: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.dark,
         child: SafeArea(
@@ -27,11 +68,11 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildAppBar(),
+                _buildAppBar(context, ref),
                 _buildHeroSection(),
                 _buildQuickRoutes(),
                 _buildRecentTrips(),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -40,7 +81,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar(BuildContext contex, WidgetRef ref) {
+    final user = ref.watch(authNotifierProvider.select((state) => state.user));
+    String initials = ((user?.firstName.isNotEmpty == true ? user!.firstName[0] : '') +
+                       (user?.lastName.isNotEmpty == true ? user!.lastName[0] : '')).toUpperCase();
+    if (initials.isEmpty) initials = '?';
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Row(
@@ -375,153 +421,94 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDrawer() {
+  Widget _buildDrawer(BuildContext context, WidgetRef ref) {
+    // Watch only the user part of the state
+    final user = ref.watch(authNotifierProvider.select((state) => state.user));
+    // Safely calculate initials
+    String initials = ((user?.firstName.isNotEmpty == true ? user!.firstName[0] : '') +
+                       (user?.lastName.isNotEmpty == true ? user!.lastName[0] : '')).toUpperCase();
+    if (initials.isEmpty) initials = '?'; // Fallback
+
+    final currentRoute = ModalRoute.of(context)?.settings.name ?? AppRoutes.home;
+
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: ghanaGreen,
-            ),
+          DrawerHeader( // User Info Header
+            decoration: const BoxDecoration(color: ghanaGreen),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: ghanaWhite,
-                  child: Text(
-                    'KM',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: ghanaGreen,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'Kofi Mensah',
-                  style: TextStyle(
-                    color: ghanaWhite,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  '+233 55 123 4567',
-                  style: TextStyle(
-                    color: ghanaWhite.withOpacity(0.9),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
+               crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.end,
+               children: [
+                 CircleAvatar(
+                   radius: 30, backgroundColor: ghanaWhite,
+                   backgroundImage: (user?.profilePicture != null && user!.profilePicture!.isNotEmpty) ? NetworkImage(user.profilePicture!) : null,
+                   child: (user?.profilePicture == null || user!.profilePicture!.isEmpty)
+                    ? Text(initials, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: ghanaGreen))
+                    : null),
+                 const SizedBox(height: 12),
+                 Text(
+                   user?.fullName ?? 'User Name', // Display full name safely
+                   style: const TextStyle(color: ghanaWhite, fontSize: 18, fontWeight: FontWeight.bold),
+                   maxLines: 1, overflow: TextOverflow.ellipsis
+                 ),
+                 const SizedBox(height: 4),
+                 Text(
+                   user?.phoneNumber ?? 'Phone Number', // Display phone safely
+                   style: TextStyle(color: ghanaWhite.withOpacity(0.9), fontSize: 14)
+                 ),
+               ],
             ),
           ),
-          _buildDrawerItem(
-            icon: Icons.home_outlined,
-            title: 'Home',
-            onTap: () {
-              Navigator.pop(context);
-            },
-            isSelected: true,
-          ),
-          _buildDrawerItem(
-            icon: Icons.map_outlined,
-            title: 'Book Ride',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.book);
-            },
-          ),
-          _buildDrawerItem(
-            icon: Icons.history_outlined,
-            title: 'My Trips',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.trips);
-            },
-          ),
-          _buildDrawerItem(
-            icon: Icons.person_outline,
-            title: 'Profile',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.profile);
-            },
-          ),
-          _buildDrawerItem(
-            icon: Icons.credit_card_outlined,
-            title: 'Payment Methods',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.payment);
-            },
-          ),
-          Divider(),
-          _buildDrawerItem(
-            icon: Icons.settings_outlined,
-            title: 'Settings',
-            onTap: () {},
-          ),
-          _buildDrawerItem(
-            icon: Icons.help_outline,
-            title: 'Help Center',
-            onTap: () {},
-          ),
-          SizedBox(height: 16),
+          // Drawer Menu Items
+          _buildDrawerItem( context: context, title: 'Home', icon: Icons.home_outlined, route: AppRoutes.home, currentRoute: currentRoute ),
+          _buildDrawerItem( context: context, title: 'Book Ride', icon: Icons.map_outlined, route: AppRoutes.book, currentRoute: currentRoute ),
+          _buildDrawerItem( context: context, title: 'My Trips', icon: Icons.history_outlined, route: AppRoutes.trips, currentRoute: currentRoute ),
+          _buildDrawerItem( context: context, title: 'Profile', icon: Icons.person_outline, route: AppRoutes.profile, currentRoute: currentRoute ),
+          _buildDrawerItem( context: context, title: 'Payment Methods', icon: Icons.credit_card_outlined, route: AppRoutes.payment, currentRoute: currentRoute ),
+          const Divider(),
+          _buildDrawerItem( context: context, title: 'Settings', icon: Icons.settings_outlined, route: AppRoutes.settings, currentRoute: currentRoute ),
+          _buildDrawerItem( context: context, title: 'Help Center', icon: Icons.help_outline, route: AppRoutes.support, currentRoute: currentRoute ),
+          const SizedBox(height: 16),
+          // Sign Out Button (Calls dialog which calls notifier)
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: ghanaRed,
-                side: BorderSide(color: ghanaRed),
-                padding: EdgeInsets.symmetric(vertical: 12),
-              ),
-              icon: Icon(Icons.logout),
-              label: Text('Sign Out'),
-              onPressed: () {},
+              style: OutlinedButton.styleFrom(foregroundColor: ghanaRed, side: const BorderSide(color: ghanaRed), padding: const EdgeInsets.symmetric(vertical: 12)),
+              icon: const Icon(Icons.logout),
+              label: const Text('Sign Out'),
+              // Call the logout dialog method using ref from the state class
+              onPressed: () => _showLogoutDialog(context, ref),
             ),
           ),
-          SizedBox(height: 24),
-          Center(
-            child: Text(
-              'Okada © 2023',
-              style: TextStyle(
-                color: textSecondary,
-                fontSize: 12,
-              ),
-            ),
-          ),
-          SizedBox(height: 16),
+          const SizedBox(height: 24),
+          Center(child: Text('Okada © ${DateTime.now().year}', style: const TextStyle(color: textSecondary, fontSize: 12))),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
   Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    bool isSelected = false,
-  }) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: isSelected ? ghanaGreen : textPrimary,
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: isSelected ? ghanaGreen : textPrimary,
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-        ),
-      ),
-      selected: isSelected,
-      selectedTileColor: ghanaGreen.withOpacity(0.1),
-      onTap: onTap,
-    );
-  }
+      required BuildContext context,
+      required String title,
+      required IconData icon,
+      required String route,
+      required String currentRoute,
+      VoidCallback? onTap,
+    }) {
+      final bool isSelected = (route == currentRoute);
+      return ListTile(
+        leading: Icon( icon, color: isSelected ? ghanaGreen : textPrimary ),
+        title: Text( title, style: TextStyle( color: isSelected ? ghanaGreen : textPrimary, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, ), ),
+        selected: isSelected,
+        selectedTileColor: ghanaGreen.withOpacity(0.1),
+        onTap: onTap ?? () { // Default navigation behavior
+            Navigator.pop(context); // Close drawer
+            if (!isSelected) {
+               Navigator.pushNamed(context, route);
+            }
+        },
+      );
+    }
 }

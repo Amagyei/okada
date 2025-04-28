@@ -75,7 +75,7 @@ class _OtpEntryScreenState extends State<OtpEntryScreen> {
     setState(() { _isLoading = true; });
 
     try {
-      await _authService.verifyOtp(otp, widget.phoneNumber);
+      await _authService.verifyOtp(otp);
 
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (route) => false);
