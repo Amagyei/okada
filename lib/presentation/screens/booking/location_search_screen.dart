@@ -23,8 +23,7 @@ class LocationSearchScreen extends StatefulWidget {
 class _LocationSearchScreenState extends State<LocationSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   // Read the key from the loaded environment variables
-  final String _googleApiKey = 'AIzaSyCXiEOWU-1EsfTuL9PQ4negxlFQqN3XXB8';
-
+  final String _googleApiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? 'MISSING_API_KEY';
   // Flag to prevent multiple navigations if user taps quickly
   bool _isFetchingDetails = false;
 

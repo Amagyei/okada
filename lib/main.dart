@@ -5,8 +5,13 @@ import 'routes.dart';
 import 'core/constants/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/widgets/auth_wrapper.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+
+const String kFlavor = String.fromEnvironment('FLAVOR', defaultValue: 'dev');
+
+Future<void> main() async {
+
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -28,4 +33,4 @@ class OkadaApp extends StatelessWidget {
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }
-} 
+}

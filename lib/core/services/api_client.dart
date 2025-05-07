@@ -3,6 +3,7 @@ import 'dart:convert'; // For jsonEncode/Decode and utf8
 import 'package:http/http.dart' as http;
 import 'package:http_interceptor/http_interceptor.dart';
 import 'token_storage_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Interceptor for adding the Authorization header.
 class AuthInterceptor implements InterceptorContract {
@@ -41,10 +42,7 @@ class TokenRefreshInterceptor implements InterceptorContract {
   final TokenStorageService _tokenStorageService = TokenStorageService();
   // Holds a shared Future for the token refresh operation.
   Future<String?>? _refreshFuture;
-  final String _baseUrl = const String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000/api',
-  );
+  final String _baseUrl = dotenv.env['API_BASE_URL']!;
 
   @override
   Future<http.BaseRequest> interceptRequest({required http.BaseRequest request}) async {

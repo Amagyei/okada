@@ -7,12 +7,11 @@ import 'package:http/http.dart' as http; // Import http client
 import 'package:okada_app/core/services/api_client.dart';
 import 'package:okada_app/core/services/api_error_model.dart';
 import 'package:okada_app/data/models/ride_model.dart'; // Assuming Ride model exists
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // For dotenv
 
 class RideService {
   final http.Client _client = createApiClient(); // Use intercepted client
-  final String _baseUrl = const String.fromEnvironment(
-      'API_BASE_URL', defaultValue: 'http://10.0.2.2:8000/api');
-
+  final String _baseUrl = dotenv.env['API_BASE_URL']!;
   // --- Helper to handle API responses consistently ---
   dynamic _handleResponse(http.Response response) {
      final dynamic responseBody;
@@ -65,11 +64,11 @@ class RideService {
         url,
         headers: {'Content-Type': 'application/json'}, // Interceptor adds Auth token
         body: json.encode({
-          'pickup_location_lat': pickupCoords.latitude,
-          'pickup_location_lng': pickupCoords.longitude,
+          'pickup_location_lat': pickupCoords.latitude.toStringAsFixed(7),
+          'pickup_location_lng': pickupCoords.longitude.toStringAsFixed(7),
           'pickup_address': pickupAddress,
-          'destination_lat': destinationCoords.latitude,
-          'destination_lng': destinationCoords.longitude,
+          'destination_lat': destinationCoords.latitude.toStringAsFixed(7),
+          'destination_lng': destinationCoords.longitude.toStringAsFixed(7),
           'destination_address': destinationAddress,
           'estimated_fare': estimatedFare.toStringAsFixed(2), // Send as string matching DecimalField
         }),
@@ -103,10 +102,10 @@ class RideService {
               url,
               headers: {'Content-Type': 'application/json'}, // Interceptor adds Auth token
               body: json.encode({
-                  'pickup_location_lat': pickupCoords.latitude,
-                  'pickup_location_lng': pickupCoords.longitude,
-                  'destination_lat': destinationCoords.latitude,
-                  'destination_lng': destinationCoords.longitude,
+                  'pickup_location_lat': pickupCoords.latitude.toStringAsFixed(7),
+                  'pickup_location_lng': pickupCoords.longitude.toStringAsFixed(7),
+                  'destination_lat': destinationCoords.latitude.toStringAsFixed(7),
+                  'destination_lng': destinationCoords.longitude.toStringAsFixed(7),
               }),
           );
 
@@ -136,5 +135,5 @@ class RideService {
   }
   // --- *** END NEW METHOD *** ---
 
-   // TODO: Add methods for getRideDetails(id), cancelRide(id), etc.
+  // TODO: Add methods for getRideDetails(id), cancelRide(id), etc.
 }

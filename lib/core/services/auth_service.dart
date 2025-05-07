@@ -13,12 +13,11 @@ import 'api_error_model.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // Needed if reading provider here
 import 'package:okada_app/providers/config_provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
   // --- Configuration ---
-  final String _baseUrl = const String.fromEnvironment(
-      'API_BASE_URL', defaultValue: 'http://10.0.2.2:8000/api');
-
+  final String _baseUrl = dotenv.env['API_BASE_URL']!;
   // --- Services ---
   final http.Client _client = createApiClient(); // Use intercepted client
   final TokenStorageService _tokenStorageService = TokenStorageService();

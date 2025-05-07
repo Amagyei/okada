@@ -53,8 +53,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   bool _isFetchingPlaceDetails = false;
 
   // API Key from .env
-  final String _googleApiKey = 'AIzaSyAKL2jbKsO2XHoreH_sxQ8243AkOB1GbkA';
-
+  final String _googleApiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? 'MISSING_API_KEY';
   // Focus Nodes to control focus between fields
   final FocusNode _pickupFocusNode = FocusNode();
   final FocusNode _destinationFocusNode = FocusNode();

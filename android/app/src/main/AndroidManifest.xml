@@ -5,7 +5,6 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <application
         android:label="okada_app"
-        android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <meta-data android:name="com.google.android.geo.API_KEY"
                    android:value="AIzaSyAKL2jbKsO2XHoreH_sxQ8243AkOB1GbkA "/>
@@ -23,7 +22,7 @@
               android:resource="@style/NormalTheme"
               />
             <meta-data android:name="com.google.android.geo.API_KEY"
-               android:value="AIzaSyCXiEOWU-1EsfTuL9PQ4negxlFQqN3XXB8"/> <intent-filter>
+               android:value="${googleMapsApiKey}"/> <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
