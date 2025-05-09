@@ -21,12 +21,14 @@ import 'package:okada_app/core/services/ride_service.dart';
 import 'package:okada_app/providers/app_providers.dart';
 import 'package:okada_app/presentation/screens/booking/widgets/payment_method_selector.dart';
 import 'package:okada_app/presentation/screens/booking/widgets/driver_card.dart';
-// LocationInput widget is no longer used here
 // Geocoding package might still be used for reverse geocoding current location
 import 'package:geocoding/geocoding.dart';
+import 'dart:math'; // Import math for min function
 
 
 class BookingScreen extends ConsumerStatefulWidget {
+  const BookingScreen({Key? key}) : super(key: key);
+
   @override
   ConsumerState<BookingScreen> createState() => _BookingScreenState();
 }
@@ -42,42 +44,46 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   LatLng? _destinationLatLng;
   double? _estimatedFare;
   bool _isFetchingFare = false;
-  bool _isRequestingRide = false;
+  bool _isRequestingRide = false; // For the "Request Okada Ride" button's loading state
   final Set<Marker> _markers = {};
   PaymentMethod _selectedPaymentMethod = PaymentMethod.mobileMoney;
 
   static const LatLng _defaultCenter = LatLng(5.6037, -0.1870); // Accra
-  bool _showRideOptions = false;
+  bool _showRideOptions = false; // To show/hide DriverCard, PaymentMethodSelector etc.
   bool _isInitializingLocation = true;
   String _initErrorMsg = '';
   bool _isFetchingPlaceDetails = false;
 
-  // API Key from .env
+  // *** New state variable for searching UI ***
+  bool _isSearchingForDriver = false;
+  String? _currentRideId; // To store the ID of the requested ride for polling
+  Timer? _rideStatusTimer;
+
+
   final String _googleApiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? 'MISSING_API_KEY';
-  // Focus Nodes to control focus between fields
   final FocusNode _pickupFocusNode = FocusNode();
   final FocusNode _destinationFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    // Listeners removed as geocoding is triggered by autocomplete selection now
     WidgetsBinding.instance.addPostFrameCallback((_) {
        if (_googleApiKey == 'MISSING_API_KEY') {
-          print("ERROR: GOOGLE_MAPS_API_KEY missing. Geocoding/Maps/Places will fail.");
+          print("[BookingScreen] ERROR: GOOGLE_MAPS_API_KEY missing. Geocoding/Maps/Places will fail.");
           _showError("Map/Search unavailable: API key missing.");
-          setState(() => _isInitializingLocation = false);
+          if (mounted) setState(() => _isInitializingLocation = false);
        } else {
           _initializePickupLocation(setAsDefault: true);
        }
     });
   }
 
-  // Fetches current location and sets it as the default pickup
   Future<void> _initializePickupLocation({bool setAsDefault = false}) async {
     print("[BookingScreen] Start _initializePickupLocation (setAsDefault: $setAsDefault)");
     if (!mounted) return;
-    if (!_isInitializingLocation) setState(() => _isInitializingLocation = true);
+    if (setAsDefault || !_isInitializingLocation) { // Ensure loading is true if re-initializing
+      setState(() => _isInitializingLocation = true);
+    }
     if (_initErrorMsg.isNotEmpty) setState(() => _initErrorMsg = '');
 
     final locationService = ref.read(locationServiceProvider);
@@ -136,12 +142,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   @override
   void dispose() {
-    // Listeners removed
     _pickupController.dispose();
     _destinationController.dispose();
     _mapController?.dispose();
     _pickupFocusNode.dispose();
     _destinationFocusNode.dispose();
+    _rideStatusTimer?.cancel();
     super.dispose();
   }
 
@@ -173,9 +179,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
   // --- End Map Helper Methods ---
 
-
-  // --- Geocoding Logic REMOVED ---
-
   // --- Helper for reverse geocoding using Google API ---
   Future<String?> _getAddressFromCoords(LatLng coords) async {
      if (_googleApiKey == 'MISSING_API_KEY') return null;
@@ -200,10 +203,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     if (_isFetchingPlaceDetails) return;
     setState(() => _isFetchingPlaceDetails = true);
 
-    // *** Unfocus the correct text field ***
     if (fieldType == 'pickup') _pickupFocusNode.unfocus();
     else _destinationFocusNode.unfocus();
-    // *** Also ensure general unfocus happens ***
     FocusScope.of(context).unfocus();
 
     if (prediction.placeId == null) { _showError("Could not get place details (Missing Place ID)."); setState(() => _isFetchingPlaceDetails = false); return; }
@@ -290,9 +291,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     }
     print("[BookingScreen] Fetching estimated fare...");
     if (mounted) setState(() { _isFetchingFare = true; _estimatedFare = null; });
+    final rideService = ref.read(rideServiceProvider);
     try {
-      // *** Call the actual service method ***
-       final rideService = ref.read(rideServiceProvider);
        final fare = await rideService.getEstimatedFare(
          pickupCoords: _pickupLatLng!,
          destinationCoords: _destinationLatLng!,
@@ -310,7 +310,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   // --- Ride Request ---
   Future<void> _requestRide() async {
-     // Use addresses from controllers now
      final pickupAddress = _pickupController.text.trim();
      final destinationAddress = _destinationController.text.trim();
 
@@ -325,28 +324,63 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
      }
 
      print("[BookingScreen] Attempting ride request...");
-     if (mounted) setState(() { _isRequestingRide = true; });
+     // Set _isRequestingRide for button, _isSearchingForDriver for UI switch
+     setState(() { _isRequestingRide = true; });
+
      final rideService = ref.read(rideServiceProvider);
      try {
         print("[BookingScreen] Calling createRideRequest Service...");
         final ride = await rideService.createRideRequest(
            pickupCoords: _pickupLatLng!, pickupAddress: pickupAddress,
            destinationCoords: _destinationLatLng!, destinationAddress: destinationAddress,
-           estimatedFare: _estimatedFare!, // Pass the fetched fare
+           estimatedFare: _estimatedFare!,
         );
         if (mounted) {
            print("[BookingScreen] Ride Requested! ID: ${ride.id}");
-           // TODO: Navigate to 'Searching for Driver' or 'Ride Tracking' screen
-           ScaffoldMessenger.of(context).showSnackBar(
-             SnackBar(content: Text('Ride requested! Searching... (ID: ${ride.id})'), backgroundColor: ghanaGreen),
-           );
+           // *** This setState will trigger the UI change ***
+           setState(() {
+             _isSearchingForDriver = true; // This is the key flag for UI switch
+             _currentRideId = ride.id.toString();
+             _isRequestingRide = false; // Reset button loading state
+           });
+           print("[BookingScreen] After setState in _requestRide: _isSearchingForDriver=$_isSearchingForDriver");
+           _startRideStatusPolling(ride.id);
         }
      } catch (e) {
         print("[BookingScreen] Ride request failed: $e");
-        if (mounted) _showError("Failed to request ride: ${e.toString().replaceFirst("Exception: ", "")}");
-     } finally {
-        if (mounted) setState(() { _isRequestingRide = false; });
+        if (mounted) {
+           _showError("Failed to request ride: ${e.toString().replaceFirst("Exception: ", "")}");
+           setState(() { _isRequestingRide = false; }); // Reset button loading on error
+        }
      }
+     // _isRequestingRide is reset above or on error
+  }
+
+  // --- Polling for Ride Status ---
+  void _startRideStatusPolling(int rideId) {
+    print("[BookingScreen] Starting ride status polling for ride ID: $rideId");
+    _rideStatusTimer?.cancel();
+    _rideStatusTimer = Timer.periodic(const Duration(seconds: 7), (timer) async {
+      if (!mounted || !_isSearchingForDriver) { // Check _isSearchingForDriver
+        timer.cancel();
+        print("[BookingScreen] Polling stopped (unmounted or no longer searching).");
+        return;
+      }
+      print("[BookingScreen] Polling for ride status (ID: $rideId)...");
+      try {
+        // TODO: Implement RideService.getRideDetails(rideId)
+        // final rideDetails = await ref.read(rideServiceProvider).getRideDetails(rideId);
+        if (timer.tick > 3) { // Simulate acceptance
+           print("[BookingScreen] SIMULATING DRIVER ACCEPTANCE for ride $rideId");
+           if (mounted) {
+             setState(() { _isSearchingForDriver = false; }); // Stop searching UI
+             _showError("Ride Accepted! (Simulated)"); // Replace with actual UI
+             timer.cancel(); // Stop polling
+             // TODO: Navigate to Ride Tracking Screen
+           }
+        }
+      } catch (e) { print("[BookingScreen] Error polling ride status: $e"); }
+    });
   }
 
   // --- Show Error Helper ---
@@ -361,7 +395,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   @override
   Widget build(BuildContext context) {
     LatLng initialCenter = _pickupLatLng ?? _defaultCenter;
-    print("[BookingScreen] Build method called. Initializing: $_isInitializingLocation, ShowOptions: $_showRideOptions");
+    print("[BookingScreen] Build: Init: $_isInitializingLocation, ShowOpts: $_showRideOptions, Searching: $_isSearchingForDriver");
 
     return Scaffold(
       appBar: AppBar(
@@ -369,13 +403,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         backgroundColor: Colors.transparent, systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
       extendBodyBehindAppBar: true,
-      // *** Wrap body with GestureDetector ***
       body: GestureDetector(
          onTap: () {
             print("[BookingScreen] GestureDetector tapped - Unfocusing");
-            FocusScope.of(context).unfocus(); // Remove focus from any active field
+            FocusScope.of(context).unfocus();
          },
-         behavior: HitTestBehavior.opaque, // Catch taps on empty areas
+         behavior: HitTestBehavior.opaque,
         child: Stack(
           children: [
             // --- Map View ---
@@ -385,17 +418,20 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 initialCameraPosition: CameraPosition( target: initialCenter, zoom: 14.5),
                 markers: _markers,
                 myLocationEnabled: true, myLocationButtonEnabled: true, zoomControlsEnabled: true,
-                padding: EdgeInsets.only(bottom: MediaQuery.of(context).size.height * (_showRideOptions ? 0.60 : 0.40), top: 100),
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).size.height *
+                      (_isSearchingForDriver
+                          ? 0.25
+                          : (_showRideOptions ? 0.60 : 0.40)),
+                  top: 100
+                ),
                 onMapCreated: (GoogleMapController controller) {
                    if (!_mapControllerCompleter.isCompleted) { _mapControllerCompleter.complete(controller); }
                    _mapController = controller;
                    print("[BookingScreen] Map Created/Updated.");
                    if (_pickupLatLng != null) { _animateMapToPosition(_pickupLatLng!); }
                 },
-                onTap: (LatLng position) { // Unfocus on map tap
-                   print("[BookingScreen] Map tapped - Unfocusing");
-                   FocusScope.of(context).unfocus();
-                },
+                onTap: (LatLng position) { FocusScope.of(context).unfocus(); },
               ),
             ),
             // --- End Map View ---
@@ -413,60 +449,63 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 ),
             // --- End Loading/Error Indicator ---
 
-            // --- Bottom Sheet ---
-            if (!_isInitializingLocation)
-               DraggableScrollableSheet(
-                  initialChildSize: _showRideOptions ? 0.65 : 0.45, minChildSize: 0.25, maxChildSize: 0.9,
-                  builder: (context, scrollController) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).canvasColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                        boxShadow: [ BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, spreadRadius: 2)],
-                      ),
-                      child: ListView( // Use ListView for better scroll behavior
-                        controller: scrollController,
-                        padding: EdgeInsets.zero,
-                        children: [
-                           Center(child: Container(width: 40, height: 5, margin: const EdgeInsets.only(top: 12, bottom: 12), decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(3)))),
-                           Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // *** Use GooglePlaceAutoCompleteTextField directly ***
-                                  _buildPlacesSearchField(
-                                     controller: _pickupController, labelText: 'Pickup Location',
-                                     prefixIcon: Icons.my_location, focusNode: _pickupFocusNode,
-                                     fieldType: 'pickup',
-                                     trailing: IconButton( // Button to use current location
-                                       icon: const Icon(Icons.gps_fixed, size: 20, color: textSecondary),
-                                       tooltip: 'Use Current Location', padding: EdgeInsets.zero, constraints: const BoxConstraints(),
-                                       onPressed: _isInitializingLocation ? null : () => _initializePickupLocation(setAsDefault: true),
-                                     ),
+            // --- Main Content: Booking Sheet OR Searching Overlay ---
+            if (!_isInitializingLocation) // Only show after init attempt
+              _isSearchingForDriver
+                  ? _buildSearchingForDriverUI() // Show searching overlay
+                  : DraggableScrollableSheet( // Show booking options sheet
+                      initialChildSize: _showRideOptions ? 0.65 : 0.45,
+                      minChildSize: 0.25,
+                      maxChildSize: 0.9,
+                      builder: (context, scrollController) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).canvasColor,
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                            boxShadow: [ BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, spreadRadius: 2)],
+                          ),
+                          child: ListView(
+                            controller: scrollController,
+                            padding: EdgeInsets.zero,
+                            children: [
+                               Center(child: Container(width: 40, height: 5, margin: const EdgeInsets.only(top: 12, bottom: 12), decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(3)))),
+                               Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildPlacesSearchField(
+                                         controller: _pickupController, labelText: 'Pickup Location',
+                                         prefixIcon: Icons.my_location, focusNode: _pickupFocusNode,
+                                         fieldType: 'pickup',
+                                         trailing: IconButton(
+                                           icon: const Icon(Icons.gps_fixed, size: 20, color: textSecondary),
+                                           tooltip: 'Use Current Location', padding: EdgeInsets.zero, constraints: const BoxConstraints(),
+                                           onPressed: _isInitializingLocation ? null : () => _initializePickupLocation(setAsDefault: true),
+                                         ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                       _buildPlacesSearchField(
+                                         controller: _destinationController, labelText: 'Destination',
+                                         prefixIcon: Icons.location_on_outlined, focusNode: _destinationFocusNode,
+                                         fieldType: 'destination',
+                                      ),
+                                      const SizedBox(height: 16),
+                                      AnimatedSwitcher(
+                                        duration: const Duration(milliseconds: 300),
+                                        transitionBuilder: (child, animation) => SizeTransition(sizeFactor: animation, child: child),
+                                        child: _showRideOptions ? _buildRideOptionsSection() : const SizedBox.shrink(key: ValueKey('empty')),
+                                      ),
+                                      const SizedBox(height: 16),
+                                    ],
                                   ),
-                                  const SizedBox(height: 12),
-                                   _buildPlacesSearchField(
-                                     controller: _destinationController, labelText: 'Destination',
-                                     prefixIcon: Icons.location_on_outlined, focusNode: _destinationFocusNode,
-                                     fieldType: 'destination',
-                                  ),
-                                  // *** End GooglePlaceAutoCompleteTextField ***
-                                  const SizedBox(height: 16),
-                                  AnimatedSwitcher( // Ride Options Section
-                                    duration: const Duration(milliseconds: 300),
-                                    transitionBuilder: (child, animation) => SizeTransition(sizeFactor: animation, child: child),
-                                    child: _showRideOptions ? _buildRideOptionsSection() : const SizedBox.shrink(key: ValueKey('empty')),
-                                  ),
-                                  const SizedBox(height: 16), // Bottom padding
-                                ],
-                              ),
-                           ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-            // --- End Bottom Sheet ---
+                               ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            // --- End Main Content ---
           ],
         ),
       ),
@@ -491,7 +530,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
          const SizedBox(height: 8),
          GooglePlaceAutoCompleteTextField(
            textEditingController: controller,
-           focusNode: focusNode, // Assign focus node
+           focusNode: focusNode,
            googleAPIKey: _googleApiKey,
            inputDecoration: InputDecoration(
              hintText: "Search $labelText",
@@ -511,7 +550,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                               constraints: const BoxConstraints(),
                               onPressed: !isApiKeyMissing ? () {
                                  controller.clear();
-                                 // Clear corresponding LatLng state when field cleared manually
                                  setState(() {
                                     if (fieldType == 'pickup') _pickupLatLng = null;
                                     else _destinationLatLng = null;
@@ -538,23 +576,15 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
            itemClick: (prediction) {
               controller.text = prediction.description ?? "";
               controller.selection = TextSelection.fromPosition(TextPosition(offset: prediction.description?.length ?? 0));
-              // *** Explicitly unfocus after item click ***
               if (fieldType == 'pickup') _pickupFocusNode.unfocus();
               else _destinationFocusNode.unfocus();
-              // Let getPlaceDetailWithLatLng handle fetching details
            },
            itemBuilder: (context, index, Prediction prediction) {
-              return Material( // Wrap with Material for InkWell splash effect
-                 color: Colors.transparent, // Avoid double background
+              return Material(
+                 color: Colors.transparent,
                  child: InkWell(
                    onTap: () {
-                      // Manually trigger selection logic when tapping item
                       _onPlaceSelected(prediction, fieldType);
-                      // Update text field immediately
-                      // controller.text = prediction.description ?? ""; // This is handled by _onPlaceSelected now
-                      // controller.selection = TextSelection.fromPosition(TextPosition(offset: prediction.description?.length ?? 0));
-                      // *** Explicitly unfocus after item tap ***
-                      // (Already handled in _onPlaceSelected now)
                    },
                    child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -570,8 +600,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               );
            },
            seperatedBuilder: Divider(height: 1, color: Colors.grey.shade200),
-           isCrossBtnShown: false, // Use custom suffixIcon logic
-           // Disable search if API key is missing - Handled by checking _googleApiKey before use
+           isCrossBtnShown: false,
          ),
        ],
      );
@@ -592,7 +621,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         DriverCard(
           name: "Available Okada", rating: 4.5,
           price: _isFetchingFare ? "..." : (_estimatedFare != null ? 'GH₵ ${_estimatedFare!.toStringAsFixed(2)}' : 'N/A'),
-          eta: _isFetchingFare ? "..." : "5 min", // Placeholder
+          eta: _isFetchingFare ? "..." : "5 min",
           isSelected: true,
           onTap: () { /* Select this option if multiple later */ },
         ),
@@ -617,5 +646,65 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     );
   }
   // --- End Ride Options Section ---
+
+  // --- *** NEW: Searching for Driver UI *** ---
+  Widget _buildSearchingForDriverUI() {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withOpacity(0.75),
+        child: Center(
+          child: Material(
+            elevation: 8,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            color: Theme.of(context).cardColor,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.motorcycle, size: 60, color: ghanaGreen),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Searching for Okadas...',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Connecting you with a nearby rider.',
+                    style: TextStyle(fontSize: 14, color: textSecondary),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  LinearProgressIndicator(
+                    backgroundColor: Colors.grey.shade300,
+                    valueColor: AlwaysStoppedAnimation<Color>(ghanaGold),
+                    minHeight: 6,
+                  ),
+                  const SizedBox(height: 24),
+                  TextButton(
+                    onPressed: () {
+                      _rideStatusTimer?.cancel();
+                      setState(() {
+                        _isSearchingForDriver = false;
+                        _isRequestingRide = false;
+                        // Optionally reset locations or just show ride options again
+                        // For now, just hide searching UI and let user decide next
+                        if (_pickupLatLng != null && _destinationLatLng != null) {
+                           _showRideOptions = true;
+                        }
+                      });
+                      print("Ride search cancelled by user.");
+                    },
+                    child: const Text('Cancel Request', style: TextStyle(color: ghanaRed, fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  // --- *** END Searching For Driver UI *** ---
 
 } // End of _BookingScreenState

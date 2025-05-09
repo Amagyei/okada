@@ -1,12 +1,13 @@
 // lib/presentation/auth/login
+import 'dart:async'; // Import dart:async for Timer
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/theme.dart';
-import '../../../core/widgets/ghana_widgets.dart';
+import '../../../core/widgets/ghana_widgets.dart'; // Assuming GhanaButton is here
 import '../../../routes.dart';
 
-import '../../../providers/auth_providers.dart'; // Import provider definition
-import '../../../state/auth_state.dart';      // Import state definition
+import '../../../providers/auth_providers.dart';
+import '../../../state/auth_state.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   @override
@@ -18,35 +19,79 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   
   bool _obscurePassword = true;
-  
   final _formKey = GlobalKey<FormState>();
+
+  OverlayEntry? _overlayEntry;
+  Timer? _overlayTimer;
 
   @override
   void dispose() {
     _phoneController.dispose();
     _passwordController.dispose();
+    _removeErrorOverlay(); // Clean up the overlay and timer
     super.dispose();
   }
 
-  void _showError(String message) {
+  void _removeErrorOverlay() {
+    _overlayTimer?.cancel();
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _showErrorBubble(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    _removeErrorOverlay();
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + 20.0,
+        left: MediaQuery.of(context).size.width * 0.1,
+        right: MediaQuery.of(context).size.width * 0.1,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 10.0),
+            decoration: BoxDecoration(
+              color: Colors.redAccent,
+              borderRadius: BorderRadius.circular(25.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 5.0,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14.0,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
+
+    Overlay.of(context).insert(_overlayEntry!);
+    _overlayTimer = Timer(const Duration(seconds: 4), () {
+      _removeErrorOverlay();
+    });
   }
 
   Future<void> _login() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
+      _showErrorBubble("Please fill all fields correctly.");
       return;
     }
     String phoneNumber = _phoneController.text.trim();
-    // Get the notifier instance using ref.read (for calling methods)
     final authNotifier = ref.read(authNotifierProvider.notifier);
 
     try {
-      
       await authNotifier.login(phoneNumber, _passwordController.text);
-
       final latestAuthState = ref.read(authNotifierProvider);
 
       if (!mounted) return;
@@ -57,11 +102,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         } else {
           Navigator.pushReplacementNamed(context, AppRoutes.otp, arguments: phoneNumber);
         }
+      } else if (latestAuthState.status == AuthStatus.error && latestAuthState.errorMessage != null) {
+          _showErrorBubble(latestAuthState.errorMessage!);
       }
+      // If login fails and the notifier throws an exception, the catch block handles it.
+      // If the notifier sets an error state without throwing, the else-if above handles it.
       
     } catch (e) {
       if (mounted) {
-        _showError(e.toString().replaceFirst("Exception: ", ""));
+        _showErrorBubble(e.toString().replaceFirst("Exception: ", ""));
       }
     }
   }
@@ -70,6 +119,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState.status == AuthStatus.authenticating;
+
+    // Listen to auth state for errors that might not be caught by the try-catch in _login
+    // (e.g., if login succeeds but some other condition fails and sets error state in notifier)
+    ref.listen<AuthState>(authNotifierProvider, (previous, next) {
+      if (next.status == AuthStatus.error && next.errorMessage != null) {
+        // Ensure we're not showing duplicate error messages if _login also caught it
+        // This listener is more for errors set by the notifier outside the direct _login flow.
+        // You might need to add more sophisticated logic to prevent double display if _login() also calls _showErrorBubble for the same error.
+        // For now, this covers cases where an error is set in the provider asynchronously.
+        // If _login always handles showing its own errors, this specific listener part might be redundant or need adjustment.
+        // Consider if error is already being shown by _login's try/catch or direct status check.
+      }
+    });
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -150,8 +212,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                      if (value == null || value.trim().isEmpty) {
                        return 'Please enter phone number';
                      }
-                     if (!RegExp(r'^[0-9]{10}$').hasMatch(value.trim())) {
-                        return 'Enter a valid 10-digit phone number';
+                     // Updated Regex for Ghana phone numbers (starts with 0, followed by 9 digits)
+                     if (!RegExp(r'^0[0-9]{9}$').hasMatch(value.trim())) {
+                        return 'Enter a valid 10-digit Ghana phone number';
                      }
                      return null;
                    }
@@ -169,7 +232,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       color: textSecondary,
                     ),
                     onPressed: () {
-                      // Use local setState ONLY for local UI state like password visibility
                       setState(() {
                         _obscurePassword = !_obscurePassword;
                       });
@@ -190,9 +252,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 SizedBox(height: 32),
                 GhanaButton(
                   text: 'Sign In',
-                  // Use isLoading from the watched notifier state
                   isLoading: isLoading,
-                  // Pass the _login method directly or wrapped if needed
                   onPressed: isLoading ? null : _login,
                 ),
                 SizedBox(height: 24),
@@ -205,13 +265,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       text: TextSpan(
                         text: "Don't have an account? ",
                         style: TextStyle(
-                          color: textSecondary,
+                          color: textSecondary, // Assuming textSecondary is defined
                         ),
                         children: [
                           TextSpan(
                             text: 'Sign Up',
                             style: TextStyle(
-                              color: ghanaGreen,
+                              color: ghanaGreen, // Assuming ghanaGreen is defined
                               fontWeight: FontWeight.bold,
                             ),
                           ),
