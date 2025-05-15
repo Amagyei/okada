@@ -7,6 +7,8 @@ import 'package:okada_app/providers/auth_providers.dart'; // Adjust path
 import 'package:okada_app/state/auth_state.dart'; // Adjust path
 
 class AuthWrapper extends ConsumerWidget {
+  const AuthWrapper({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);

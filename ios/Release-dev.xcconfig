@@ -1,0 +1,5 @@
+#include "Pods/Target Support Files/Pods-Runner/Pods-Runner.release-dev.xcconfig"
+#include "Flutter/Release.xcconfig"
+
+FLUTTER_BUILD_MODE=release
+BUNDLE_ID_SUFFIX=.dev

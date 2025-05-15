@@ -6,7 +6,7 @@ import 'package:okada_app/routes.dart'; // Ensure AppRoutes is imported
 class OtpEntryScreen extends StatefulWidget {
   final String phoneNumber; // Receive phone number
 
-  const OtpEntryScreen({Key? key, required this.phoneNumber}) : super(key: key);
+  const OtpEntryScreen({super.key, required this.phoneNumber});
 
   @override
   _OtpEntryScreenState createState() => _OtpEntryScreenState();
@@ -19,7 +19,7 @@ class _OtpEntryScreenState extends State<OtpEntryScreen> {
   bool _isResending = false;
   bool _canResend = false;
   Timer? _resendTimer;
-  int _resendCooldown = 60;
+  int _resendCooldown = 10;
 
   @override
   void initState() {

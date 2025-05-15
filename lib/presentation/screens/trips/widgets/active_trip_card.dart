@@ -11,14 +11,14 @@ class ActiveTripCard extends StatelessWidget {
   final VoidCallback onCancel;
 
   const ActiveTripCard({
-    Key? key,
+    super.key,
     required this.from,
     required this.to,
     required this.driverName,
     required this.driverRating,
     required this.eta,
     required this.onCancel,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +87,7 @@ class ActiveTripCard extends StatelessWidget {
                 // Trip details
                 Row(
                   children: [
-                    Container(
+                    SizedBox(
                       width: 32,
                       child: Column(
                         children: [

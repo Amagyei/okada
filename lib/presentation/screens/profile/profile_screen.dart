@@ -12,7 +12,7 @@ class ProfileMenuItem {
   final IconData icon;
   final String route;
 
-  ProfileMenuItem({
+  const ProfileMenuItem({
     required this.title,
     required this.description,
     required this.icon,
@@ -22,7 +22,7 @@ class ProfileMenuItem {
 
 // Change StatelessWidget to ConsumerWidget
 class ProfileScreen extends ConsumerWidget {
-  final List<ProfileMenuItem> _menuItems = [
+  static const List<ProfileMenuItem> _menuItems = [
     ProfileMenuItem(
       title: 'Personal Information',
       description: 'Manage your personal details',
@@ -60,6 +60,8 @@ class ProfileScreen extends ConsumerWidget {
       route: AppRoutes.settings,
     ),
   ];
+
+  const ProfileScreen({super.key});
 
   @override
   // Add WidgetRef ref to the build method

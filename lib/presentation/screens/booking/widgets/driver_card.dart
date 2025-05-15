@@ -11,14 +11,14 @@ class DriverCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const DriverCard({
-    Key? key,
+    super.key,
     required this.name,
     required this.rating,
     required this.price,
     required this.eta,
     required this.isSelected,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

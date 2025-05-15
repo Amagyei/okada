@@ -11,6 +11,8 @@ import '../../../state/auth_state.dart';
 
 // Convert to ConsumerStatefulWidget
 class RegisterScreen extends ConsumerStatefulWidget {
+  const RegisterScreen({super.key});
+
   @override
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }

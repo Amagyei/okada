@@ -15,6 +15,8 @@ import 'package:okada_app/data/models/user_model.dart';
 
 
 class HomeScreen extends ConsumerStatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }

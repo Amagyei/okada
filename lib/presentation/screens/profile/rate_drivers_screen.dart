@@ -22,6 +22,8 @@ class DriverRating {
 }
 
 class RateDriversScreen extends StatefulWidget {
+  const RateDriversScreen({super.key});
+
   @override
   _RateDriversScreenState createState() => _RateDriversScreenState();
 }

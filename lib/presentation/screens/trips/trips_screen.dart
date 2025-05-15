@@ -6,6 +6,8 @@ import 'widgets/trip_item.dart';
 import 'widgets/active_trip_card.dart';
 
 class TripsScreen extends StatefulWidget {
+  const TripsScreen({super.key});
+
   @override
   _TripsScreenState createState() => _TripsScreenState();
 }

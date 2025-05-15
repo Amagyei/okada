@@ -4,6 +4,8 @@ import '../../../core/constants/theme.dart';
 import '../../../core/widgets/ghana_widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
 }
@@ -80,7 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: ListTile(
               title: Text('Language'),
-              subtitle: Text('$_language'),
+              subtitle: Text(_language),
               trailing: Icon(Icons.arrow_forward_ios, size: 16),
               onTap: _showLanguageDialog,
             ),

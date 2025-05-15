@@ -7,6 +7,8 @@ import '../../../state/auth_state.dart'; // Import state for status check
 
 
 class PersonalInfoScreen extends ConsumerStatefulWidget {
+  const PersonalInfoScreen({super.key});
+
   @override
   ConsumerState<PersonalInfoScreen> createState() => _PersonalInfoScreenState();
 }

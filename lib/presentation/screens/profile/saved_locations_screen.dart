@@ -12,6 +12,8 @@ class SavedLocation {
 }
 
 class SavedLocationsScreen extends StatefulWidget {
+  const SavedLocationsScreen({super.key});
+
   @override
   _SavedLocationsScreenState createState() => _SavedLocationsScreenState();
 }
@@ -209,8 +211,8 @@ class _SavedLocationsScreenState extends State<SavedLocationsScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: ghanaGreen,
-        child: Icon(Icons.add),
         onPressed: _showAddLocationDialog,
+        child: Icon(Icons.add),
       ),
     );
   }

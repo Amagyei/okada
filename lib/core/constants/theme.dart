@@ -39,12 +39,10 @@ final ThemeData okadaTheme = ThemeData(
     secondary: ghanaGold,
     error: ghanaRed,
     surface: ghanaWhite,
-    background: Color(0xFFF5F5F5),
     onPrimary: ghanaWhite,
     onSecondary: ghanaBlack,
     onError: ghanaWhite,
     onSurface: textPrimary,
-    onBackground: textPrimary,
   ),
   scaffoldBackgroundColor: Color(0xFFF5F5F5),
   appBarTheme: AppBarTheme(

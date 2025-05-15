@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_flutter_ios/google_maps_flutter_ios.dart';
 import 'package:geolocator/geolocator.dart';
 // Import the places package for the TextField and Prediction model
 import 'package:google_places_flutter/google_places_flutter.dart';
@@ -27,7 +28,7 @@ import 'dart:math'; // Import math for min function
 
 
 class BookingScreen extends ConsumerStatefulWidget {
-  const BookingScreen({Key? key}) : super(key: key);
+  const BookingScreen({super.key});
 
   @override
   ConsumerState<BookingScreen> createState() => _BookingScreenState();
@@ -203,8 +204,11 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     if (_isFetchingPlaceDetails) return;
     setState(() => _isFetchingPlaceDetails = true);
 
-    if (fieldType == 'pickup') _pickupFocusNode.unfocus();
-    else _destinationFocusNode.unfocus();
+    if (fieldType == 'pickup') {
+      _pickupFocusNode.unfocus();
+    } else {
+      _destinationFocusNode.unfocus();
+    }
     FocusScope.of(context).unfocus();
 
     if (prediction.placeId == null) { _showError("Could not get place details (Missing Place ID)."); setState(() => _isFetchingPlaceDetails = false); return; }
@@ -551,8 +555,11 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                               onPressed: !isApiKeyMissing ? () {
                                  controller.clear();
                                  setState(() {
-                                    if (fieldType == 'pickup') _pickupLatLng = null;
-                                    else _destinationLatLng = null;
+                                    if (fieldType == 'pickup') {
+                                      _pickupLatLng = null;
+                                    } else {
+                                      _destinationLatLng = null;
+                                    }
                                     _markers.removeWhere((m) => m.markerId.value == fieldType);
                                     _checkShowRideOptions(); _fetchEstimatedFare();
                                  });
@@ -576,8 +583,11 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
            itemClick: (prediction) {
               controller.text = prediction.description ?? "";
               controller.selection = TextSelection.fromPosition(TextPosition(offset: prediction.description?.length ?? 0));
-              if (fieldType == 'pickup') _pickupFocusNode.unfocus();
-              else _destinationFocusNode.unfocus();
+              if (fieldType == 'pickup') {
+                _pickupFocusNode.unfocus();
+              } else {
+                _destinationFocusNode.unfocus();
+              }
            },
            itemBuilder: (context, index, Prediction prediction) {
               return Material(

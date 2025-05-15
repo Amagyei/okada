@@ -15,7 +15,7 @@ class LocationInput extends StatelessWidget {
   final TextInputAction? textInputAction; // Allow customizing keyboard action
 
   const LocationInput({
-    Key? key,
+    super.key,
     required this.label,
     required this.controller,
     required this.icon,
@@ -26,7 +26,7 @@ class LocationInput extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.textInputAction,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

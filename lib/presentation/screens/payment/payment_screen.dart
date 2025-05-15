@@ -3,6 +3,8 @@ import '../../../core/constants/theme.dart';
 import '../../../core/widgets/ghana_widgets.dart';
 
 class PaymentScreen extends StatefulWidget {
+  const PaymentScreen({super.key});
+
   @override
   _PaymentScreenState createState() => _PaymentScreenState();
 }

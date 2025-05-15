@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert'; // Required for jsonDecode
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -11,10 +11,10 @@ import 'package:http/http.dart' as http;
 // Import dotenv to access environment variables
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 // Import theme constants if needed for styling
-import 'package:okada_app/core/constants/theme.dart'; // Adjust path
+import 'package:okada_app/core/constants/theme.dart';
 
 class LocationSearchScreen extends StatefulWidget {
-  const LocationSearchScreen({Key? key}) : super(key: key);
+  const LocationSearchScreen({super.key});
 
   @override
   _LocationSearchScreenState createState() => _LocationSearchScreenState();

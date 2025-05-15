@@ -6,6 +6,7 @@ import 'main.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env.dev');
+  
   runApp(
     ProviderScope(
       child: OkadaApp(),

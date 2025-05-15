@@ -18,7 +18,7 @@ import 'presentation/screens/profile/settings_screen.dart';
 
 class UndefinedView extends StatelessWidget {
   final String? name;
-  const UndefinedView({Key? key, this.name}) : super(key: key);
+  const UndefinedView({super.key, this.name});
   @override
   Widget build(BuildContext context) {
     return Scaffold(

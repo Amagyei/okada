@@ -12,7 +12,7 @@ class TripItem extends StatelessWidget {
   final double driverRating;
 
   const TripItem({
-    Key? key,
+    super.key,
     required this.from,
     required this.to,
     required this.date,
@@ -20,7 +20,7 @@ class TripItem extends StatelessWidget {
     required this.status,
     required this.driverName,
     required this.driverRating,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

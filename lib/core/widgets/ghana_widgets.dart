@@ -9,13 +9,13 @@ class GhanaButton extends StatelessWidget {
   final double width;
 
   const GhanaButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.isLoading = false,
     this.icon,
     this.width = double.infinity,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +82,7 @@ class KenteBorderContainer extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final double borderWidth;
 
-  KenteBorderContainer({
+  const KenteBorderContainer({super.key, 
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.borderWidth = 4.0,
@@ -167,12 +167,12 @@ class GhanaCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const GhanaCard({
-    Key? key,
+    super.key,
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.elevation = 2,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -198,10 +198,10 @@ class LoadingBike extends StatefulWidget {
   final Color color;
 
   const LoadingBike({
-    Key? key,
+    super.key,
     this.size = 60,
     this.color = ghanaGreen,
-  }) : super(key: key);
+  });
 
   @override
   _LoadingBikeState createState() => _LoadingBikeState();
@@ -237,7 +237,7 @@ class _LoadingBikeState extends State<LoadingBike>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: widget.size,
       height: widget.size,
       child: Stack(
@@ -282,7 +282,7 @@ class GhanaTextField extends StatelessWidget {
   final bool enabled;  
 
   const GhanaTextField({
-    Key? key,
+    super.key,
     required this.label,
     this.hint,
     required this.controller,
@@ -293,7 +293,7 @@ class GhanaTextField extends StatelessWidget {
     this.suffix,
     this.readOnly = false, 
     this.enabled = true,   
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

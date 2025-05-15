@@ -16,6 +16,8 @@ class SupportItem {
 }
 
 class SupportScreen extends StatefulWidget {
+  const SupportScreen({super.key});
+
   @override
   _SupportScreenState createState() => _SupportScreenState();
 }
@@ -162,9 +164,9 @@ class _SupportScreenState extends State<SupportScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: ghanaGreen,
-        child: Icon(Icons.chat_outlined),
         onPressed: _showContactDialog,
         tooltip: 'Contact Support',
+        child: Icon(Icons.chat_outlined),
       ),
     );
   }

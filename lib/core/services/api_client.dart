@@ -75,7 +75,7 @@ class TokenRefreshInterceptor implements InterceptorContract {
         // Ensure method is a String and URL is a Uri.
         final String method = originalRequest.method.toString();
         final Uri url = originalRequest.url is Uri
-            ? originalRequest.url as Uri
+            ? originalRequest.url
             : Uri.parse(originalRequest.url.toString());
 
         final plainClient = http.Client();

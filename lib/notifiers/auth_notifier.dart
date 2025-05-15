@@ -121,7 +121,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
        print("[AuthNotifier] Login API failed: $e. Setting state to unauthenticated.");
        // --- End Logging ---
       state = state.copyWith(status: AuthStatus.unauthenticated, clearUser: true);
-      throw e; // Re-throw for UI error handling
+      rethrow; // Re-throw for UI error handling
     }
      // --- Logging ---
      print("[AuthNotifier] login() finished. Final state: ${state.status}");
@@ -167,7 +167,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
        print("[AuthNotifier] Register API failed: $e. Setting state to unauthenticated.");
        // --- End Logging ---
       state = state.copyWith(status: AuthStatus.unauthenticated, clearUser: true);
-      throw e;
+      rethrow;
     }
      // --- Logging ---
      print("[AuthNotifier] register() finished. Final state: ${state.status}");
@@ -189,7 +189,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
        // --- Logging ---
        print("[AuthNotifier] OTP Verification failed: $e");
        // --- End Logging ---
-      throw e;
+      rethrow;
     }
   }
 

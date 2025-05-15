@@ -2,8 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to provide directions and calculate rides.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We need background location access to track rides in progress.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>We need constant location access to ensure ride tracking even in background.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>GoogleMapsAPIKey</key>
+	<string>$(GOOGLE_MAPS_API_KEY_IOS)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Okada App</string>
 	<key>CFBundleExecutable</key>

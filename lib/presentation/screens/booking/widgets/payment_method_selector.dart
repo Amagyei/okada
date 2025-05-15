@@ -11,9 +11,9 @@ class PaymentMethodSelector extends StatefulWidget {
   final Function(PaymentMethod) onPaymentMethodSelected;
 
   const PaymentMethodSelector({
-    Key? key,
+    super.key,
     required this.onPaymentMethodSelected,
-  }) : super(key: key);
+  });
 
   @override
   _PaymentMethodSelectorState createState() => _PaymentMethodSelectorState();

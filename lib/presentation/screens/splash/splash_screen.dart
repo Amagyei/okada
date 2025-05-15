@@ -6,6 +6,8 @@ import 'package:okada_app/core/widgets/ghana_widgets.dart'; // Assuming LoadingB
 import 'package:okada_app/routes.dart';
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
@@ -128,7 +130,7 @@ class _SplashScreenState extends State<SplashScreen> {
 class LoadingBike extends StatelessWidget {
   final Color color;
   final double size;
-  const LoadingBike({Key? key, required this.color, required this.size}) : super(key: key);
+  const LoadingBike({super.key, required this.color, required this.size});
 
   @override
   Widget build(BuildContext context) {

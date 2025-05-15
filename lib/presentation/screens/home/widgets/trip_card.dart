@@ -11,7 +11,7 @@ class TripCard extends StatelessWidget {
   final double driverRating;
 
   const TripCard({
-    Key? key,
+    super.key,
     required this.from,
     required this.to,
     required this.date,
@@ -19,7 +19,7 @@ class TripCard extends StatelessWidget {
     required this.status,
     required this.driverName,
     required this.driverRating,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
