@@ -23,10 +23,7 @@ class AppConfig {
   }
 }
 
-// Riverpod provider for the AppConfig
-// Load config once when provider is first read
 final appConfigProvider = Provider<AppConfig>((ref) {
   print("[AppConfig Provider] Creating AppConfig from env.");
-  // dotenv should already be loaded by main_dev.dart or main_prod.dart
   return AppConfig.fromEnv();
 });

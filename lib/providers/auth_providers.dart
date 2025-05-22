@@ -5,6 +5,7 @@ import 'package:okada_app/core/services/auth_service.dart';
 import 'package:okada_app/core/services/token_storage_service.dart';
 import 'package:okada_app/notifiers/auth_notifier.dart'; // Adjust path
 import 'package:okada_app/state/auth_state.dart';      // Adjust path
+import 'package:okada_app/providers/config_provider.dart';
 
 // Provider for TokenStorageService (singleton)
 final tokenStorageServiceProvider = Provider<TokenStorageService>((ref) {
@@ -13,10 +14,8 @@ final tokenStorageServiceProvider = Provider<TokenStorageService>((ref) {
 
 // Provider for AuthService (singleton, depends on TokenStorageService - though AuthService manages internally now)
 final authServiceProvider = Provider<AuthService>((ref) {
-  // AuthService constructor doesn't need TokenStorageService passed externally anymore
-  // as it instantiates it internally. If you change that, read it here:
-  // final tokenService = ref.read(tokenStorageServiceProvider);
-  return AuthService();
+  final config = ref.watch(appConfigProvider);
+  return AuthService(config.apiBaseUrl);
 });
 
 // StateNotifierProvider for authentication state

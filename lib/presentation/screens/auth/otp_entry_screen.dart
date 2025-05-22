@@ -1,20 +1,22 @@
 import 'dart:async'; // Import Timer
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:okada_app/core/services/auth_service.dart';
-import 'package:okada_app/routes.dart'; // Ensure AppRoutes is imported
+import 'package:okada_app/routes.dart';
+import 'package:okada_app/providers/config_provider.dart';
 
-class OtpEntryScreen extends StatefulWidget {
+class OtpEntryScreen extends ConsumerStatefulWidget {
   final String phoneNumber; // Receive phone number
 
   const OtpEntryScreen({super.key, required this.phoneNumber});
 
   @override
-  _OtpEntryScreenState createState() => _OtpEntryScreenState();
+  ConsumerState<OtpEntryScreen> createState() => _OtpEntryScreenState();
 }
 
-class _OtpEntryScreenState extends State<OtpEntryScreen> {
+class _OtpEntryScreenState extends ConsumerState<OtpEntryScreen> {
   final TextEditingController _otpController = TextEditingController();
-  final AuthService _authService = AuthService(); // Instance of AuthService
+  late final AuthService _authService;
   bool _isLoading = false;
   bool _isResending = false;
   bool _canResend = false;
@@ -24,6 +26,7 @@ class _OtpEntryScreenState extends State<OtpEntryScreen> {
   @override
   void initState() {
     super.initState();
+    _authService = AuthService(ref.read(appConfigProvider).apiBaseUrl);
     _startResendTimer();
   }
 

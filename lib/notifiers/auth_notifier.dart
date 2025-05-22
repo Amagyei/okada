@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
 import 'package:okada_app/core/services/auth_service.dart';
 import 'package:okada_app/core/services/token_storage_service.dart';
 import 'package:okada_app/state/auth_state.dart'; // Import the state definition
@@ -225,7 +226,57 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   }
 
   // Add logs to updateUserProfile and requestOtp if needed for debugging those flows later
-  Future<void> updateUserProfile({ required String firstName, required String lastName, String? email }) async { /* ... */ }
-  Future<void> requestOtp(String phoneNumber) async { /* ... */ }
+  Future<void> updateUserProfile({
+    required String firstName,
+    required String lastName,
+    String? email,
+    String? emergencyContact,
+    String? emergencyContactName,
+    String? ghanaCardNumber,
+    File? profilePictureFile,
+    File? ghanaCardImageFile,
+    // Add other updatable fields from your User model as needed
+  }) async {
+    // Optionally, set a specific loading state for profile update
+    // For now, the UI's local _isLoading handles button state.
+    // If you had a global "profile updating" state, you'd set it here.
+    // state = state.copyWith(status: AuthStatus.updatingProfile); // Example
+    print("[AuthNotifier] updateUserProfile() called with data: FName: $firstName, LName: $lastName, Email: $email, EC: $emergencyContact, ECName: $emergencyContactName, GCardNo: $ghanaCardNumber, ProfPic: ${profilePictureFile?.path}, GCardPic: ${ghanaCardImageFile?.path}");
 
-} // End of AuthStateNotifier
+    if (state.user == null) {
+      print("[AuthNotifier] No user to update. Aborting.");
+      throw Exception("User not authenticated. Cannot update profile.");
+    }
+
+    try {
+      // Call the corresponding method in AuthService
+      // This AuthService method will handle the multipart request if files are present
+      print("[AuthNotifier] Calling _authService.updateUserProfile...");
+      final updatedUser = await _authService.updateUserProfile(
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        emergencyContact: emergencyContact,
+        emergencyContactName: emergencyContactName,
+        ghanaCardNumber: ghanaCardNumber,
+        profilePictureFile: profilePictureFile,
+        ghanaCardImageFile: ghanaCardImageFile,
+        // Pass other fields if your AuthService method expects them
+      );
+
+      // On success, update the local state with the new user data
+      print("[AuthNotifier] Profile update successful. Updating state with user: $updatedUser");
+      state = state.copyWith(user: updatedUser, status: AuthStatus.authenticated);
+    } catch (e) {
+      print("[AuthNotifier] Failed to update profile: $e");
+      // state = state.copyWith(status: AuthStatus.authenticated); // Revert to simple authenticated
+      throw e; // Re-throw for UI to handle and display the error
+    }
+
+  Future<void> requestOtp(String phoneNumber) async {
+     print("[AuthNotifier] requestOtp() called for $phoneNumber");
+     await _authService.requestOtp(phoneNumber: phoneNumber);
+  }
+
+}
+}
