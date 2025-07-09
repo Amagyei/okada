@@ -5,9 +5,8 @@ import 'routes.dart';
 import 'core/constants/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/widgets/auth_wrapper.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'core/services/notification_service.dart';
 
-// only added because the app does not request local network permission on iOS
 import 'package:multicast_dns/multicast_dns.dart';
 
 void triggerLocalNetworkAccess() async {
@@ -23,7 +22,6 @@ const String kFlavor = String.fromEnvironment('FLAVOR', defaultValue: 'dev');
 
 
 Future<void> main() async {
-
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -44,6 +42,7 @@ class OkadaApp extends StatelessWidget {
       title: 'Okada',
       debugShowCheckedModeBanner: false,
       theme: okadaTheme,
+      navigatorKey: navigatorKey, // Add navigator key for notifications
       home: AuthWrapper(), // Make AuthWrapper the root
       onGenerateRoute: AppRoutes.generateRoute,
     );

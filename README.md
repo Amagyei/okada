@@ -1,4 +1,4 @@
-# okada_app
+# okada
 
 A new Flutter project.
 

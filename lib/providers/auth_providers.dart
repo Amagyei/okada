@@ -1,11 +1,11 @@
 // lib/providers/auth_providers.dart (Create directory/file)
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:okada_app/core/services/auth_service.dart';
-import 'package:okada_app/core/services/token_storage_service.dart';
-import 'package:okada_app/notifiers/auth_notifier.dart'; // Adjust path
-import 'package:okada_app/state/auth_state.dart';      // Adjust path
-import 'package:okada_app/providers/config_provider.dart';
+import 'package:okada/core/services/auth_service.dart';
+import 'package:okada/core/services/token_storage_service.dart';
+import 'package:okada/notifiers/auth_notifier.dart'; // Adjust path
+import 'package:okada/state/auth_state.dart';      // Adjust path
+import 'package:okada/providers/config_provider.dart';
 
 // Provider for TokenStorageService (singleton)
 final tokenStorageServiceProvider = Provider<TokenStorageService>((ref) {

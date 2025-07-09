@@ -1,4 +1,4 @@
-name: okada_app
+name: okada
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -31,6 +31,13 @@ dependencies:
   flutter:
     sdk: flutter
   multicast_dns: ^0.3.0 # only addded to force app to requetst local network permission
+  firebase_core: ^2.27.1
+  firebase_messaging: ^14.7.20
+  firebase_analytics: ^10.8.10
+  firebase_remote_config: ^4.3.10
+  firebase_crashlytics: ^3.4.19
+  
+  flutter_local_notifications: ^19.0.0
 
   cupertino_icons: ^1.0.8
   http_interceptor: ^2.0.0
@@ -41,13 +48,13 @@ dependencies:
   google_maps_flutter_ios: ^2.15.2
   google_maps_flutter_android: ^2.15.2
   
-  google_places_flutter: ^2.1.0
-  # google_maps_webservice: ^0.2.0 
+  uuid: ^4.5.1 
   flutter_dotenv: ^5.0.0
   geolocator: ^11.1.0
   geocoding: ^2.2.0
   image_picker: ^1.1.2
   permission_handler: ^11.3.1
+  web_socket_channel: ^2.4.0
 
 dev_dependencies:
   flutter_test:

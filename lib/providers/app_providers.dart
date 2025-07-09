@@ -1,8 +1,9 @@
 // lib/providers/app_providers.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart'; // For Position type
-import 'package:okada_app/core/services/location_service.dart'; // Adjust path
-import 'package:okada_app/core/services/ride_service.dart'; // Adjust path
+import 'package:okada/core/services/location_service.dart'; // Adjust path
+import 'package:okada/core/services/ride_service.dart'; // Adjust path
+import 'package:okada/core/services/directions_service.dart'; // Add import
 
 // --- Location Providers ---
 
@@ -39,6 +40,11 @@ final rideServiceProvider = Provider<RideService>((ref) {
   // If RideService needs dependencies (like http client), read them here:
   // final apiClient = ref.read(apiClientProvider); // Assuming apiClientProvider exists
   return RideService();
+});
+
+// --- Directions Service Provider ---
+final directionsServiceProvider = Provider<DirectionsService>((ref) {
+  return DirectionsService();
 });
 
 // You might add FutureProviders or StreamProviders related to rides later

@@ -1,6 +1,6 @@
 {
-    "name": "okada_app",
-    "short_name": "okada_app",
+    "name": "okada",
+    "short_name": "okada",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

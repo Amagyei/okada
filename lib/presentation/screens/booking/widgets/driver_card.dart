@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../../../../core/constants/theme.dart';
 
@@ -57,6 +56,7 @@ class DriverCard extends StatelessWidget {
               ),
             ),
             SizedBox(width: 16),
+            // Expanded to take remaining space
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,7 +69,9 @@ class DriverCard extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 4),
+                  // Use min mainAxisSize and Flexible children to avoid overflow
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.star,
@@ -77,10 +79,11 @@ class DriverCard extends StatelessWidget {
                         color: ghanaGold,
                       ),
                       SizedBox(width: 4),
-                      Text(
-                        rating.toString(),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
+                      Flexible(
+                        child: Text(
+                          rating.toString(),
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontWeight: FontWeight.w500),
                         ),
                       ),
                       SizedBox(width: 16),
@@ -90,11 +93,11 @@ class DriverCard extends StatelessWidget {
                         color: textSecondary,
                       ),
                       SizedBox(width: 4),
-                      Text(
-                        'Yamaha',
-                        style: TextStyle(
-                          color: textSecondary,
-                          fontSize: 14,
+                      Flexible(
+                        child: Text(
+                          'Yamaha',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: textSecondary, fontSize: 14),
                         ),
                       ),
                     ],
@@ -102,6 +105,7 @@ class DriverCard extends StatelessWidget {
                 ],
               ),
             ),
+            // Price and ETA
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -123,6 +127,7 @@ class DriverCard extends StatelessWidget {
                 ),
               ],
             ),
+            // Checkmark if selected
             if (isSelected) ...[
               SizedBox(width: 8),
               Icon(

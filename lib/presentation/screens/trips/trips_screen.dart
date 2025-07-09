@@ -127,7 +127,6 @@ class _TripsScreenState extends State<TripsScreen> with SingleTickerProviderStat
                 SizedBox(height: 24),
                 GhanaButton(
                   text: 'Book a Ride',
-                  width: 200,
                   onPressed: () {
                     Navigator.pop(context);
                     Navigator.pushNamed(context, '/book');

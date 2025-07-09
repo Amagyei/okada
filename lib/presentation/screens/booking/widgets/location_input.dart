@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 // Adjust import path based on your project structure
-import 'package:okada_app/core/constants/theme.dart';
+import 'package:okada/core/constants/theme.dart';
 
 class LocationInput extends StatelessWidget {
   final String label;

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../../../core/constants/theme.dart';
 import '../../../core/widgets/ghana_widgets.dart';
@@ -150,60 +149,62 @@ class _SavedLocationsScreenState extends State<SavedLocationsScreen> {
                       _locations.removeAt(index);
                     });
                   },
-                  child: GhanaCard(
-                    padding: EdgeInsets.all(16),
-                    elevation: 1,
+                  child: InkWell(
                     onTap: () {
                       // Edit location
                     },
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: ghanaGold.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                    child: GhanaCard(
+                      padding: EdgeInsets.all(16),
+                      elevation: 1,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: ghanaGold.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              location.icon,
+                              color: ghanaGold,
+                              size: 24,
+                            ),
                           ),
-                          child: Icon(
-                            location.icon,
-                            color: ghanaGold,
-                            size: 24,
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                location.name,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  location.name,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                location.address,
-                                style: TextStyle(
-                                  color: textSecondary,
-                                  fontSize: 14,
+                                SizedBox(height: 4),
+                                Text(
+                                  location.address,
+                                  style: TextStyle(
+                                    color: textSecondary,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.edit_outlined,
-                            color: textSecondary,
+                          IconButton(
+                            icon: Icon(
+                              Icons.edit_outlined,
+                              color: textSecondary,
+                            ),
+                            onPressed: () {
+                              // Edit location
+                            },
                           ),
-                          onPressed: () {
-                            // Edit location
-                          },
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );

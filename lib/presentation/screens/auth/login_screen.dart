@@ -255,7 +255,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 GhanaButton(
                   text: 'Sign In',
                   isLoading: isLoading,
-                  onPressed: isLoading ? null : _login,
+                  onPressed: () => _login(),
                 ),
                 SizedBox(height: 24),
                 Center(

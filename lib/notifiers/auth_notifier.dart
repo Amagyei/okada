@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:io';
-import 'package:okada_app/core/services/auth_service.dart';
-import 'package:okada_app/core/services/token_storage_service.dart';
-import 'package:okada_app/state/auth_state.dart'; // Import the state definition
-import 'package:okada_app/data/models/user_model.dart'; // Import User model
+import 'package:okada/core/services/auth_service.dart';
+import 'package:okada/core/services/token_storage_service.dart';
+import 'package:okada/state/auth_state.dart'; // Import the state definition
+import 'package:okada/data/models/user_model.dart'; // Import User model
 
 class AuthStateNotifier extends StateNotifier<AuthState> {
   final AuthService _authService;
@@ -270,7 +270,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       print("[AuthNotifier] Failed to update profile: $e");
       // state = state.copyWith(status: AuthStatus.authenticated); // Revert to simple authenticated
-      throw e; // Re-throw for UI to handle and display the error
+      rethrow; // Re-throw for UI to handle and display the error
     }
 
   Future<void> requestOtp(String phoneNumber) async {

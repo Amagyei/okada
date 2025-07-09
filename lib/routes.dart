@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'presentation/screens/splash/splash_screen.dart';
 import 'presentation/screens/home/home_screen.dart';
 import 'presentation/screens/booking/booking_screen.dart';
+import 'presentation/rides/ongoing_ride_screen.dart';
+
 import 'presentation/screens/trips/trips_screen.dart';
 import 'presentation/screens/profile/profile_screen.dart';
 import 'presentation/screens/auth/login_screen.dart';
@@ -14,6 +16,7 @@ import 'presentation/screens/profile/saved_locations_screen.dart';
 import 'presentation/screens/profile/rate_drivers_screen.dart';
 import 'presentation/screens/profile/support_screen.dart';
 import 'presentation/screens/profile/settings_screen.dart';
+import 'data/models/ride_model.dart';
 
 
 class UndefinedView extends StatelessWidget {
@@ -43,6 +46,7 @@ class AppRoutes {
   static const String support = '/profile/support';
   static const String settings = '/profile/settings';
   static const String otp = '/otp_entry';
+  static const String ongoingRide = '/ongoing-ride';
 
   // Define protected routes
   
@@ -86,6 +90,14 @@ class AppRoutes {
       } else {
         return MaterialPageRoute(builder: (_) => LoginScreen());
       }
+    } else if (settings.name == ongoingRide) {
+      final rideId = settings.arguments as int?;
+      if (rideId != null) {
+        return MaterialPageRoute(
+          builder: (_) => OngoingRideScreen(rideId: rideId),
+        );
+      }
+      return MaterialPageRoute(builder: (_) => UndefinedView(name: settings.name));
     } else {
       return MaterialPageRoute(builder: (_) => UndefinedView(name: settings.name));
     }

@@ -1,4 +1,4 @@
-package com.example.okada_app
+package com.amagyei.okada
 
 import io.flutter.embedding.android.FlutterActivity
 

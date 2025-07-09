@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "okada_app" "\0"
+            VALUE "FileDescription", "okada" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "okada_app" "\0"
+            VALUE "InternalName", "okada" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "okada_app.exe" "\0"
-            VALUE "ProductName", "okada_app" "\0"
+            VALUE "OriginalFilename", "okada.exe" "\0"
+            VALUE "ProductName", "okada" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

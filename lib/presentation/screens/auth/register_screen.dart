@@ -5,7 +5,6 @@ import '../../../core/widgets/ghana_widgets.dart';
 import '../../../routes.dart';
 // Import Notifier and Provider if using Riverpod for registration
 import '../../../providers/auth_providers.dart';
-import '../../../state/auth_state.dart';
 // Remove direct AuthService import if using Riverpod Notifier
 // import '../../../core/services/auth_service.dart';
 
@@ -283,25 +282,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   opacity: _acceptedTerms ? 1.0 : 0.5,
                   child: GhanaButton(
                     text: 'Sign Up',
-                    isLoading: _isLoading, // Use local loading state
-                    // --- Added Debug Print to onPressed ---
-                    onPressed: _isLoading // Disable button if loading
-                      ? null
-                      : _acceptedTerms
-                          ? () {
-                              print("[RegisterScreen] GhanaButton onPressed: _handleSignUp assigned and called!");
-                              _handleSignUp();
-                            }
-                          : () {
-                              print("[RegisterScreen] GhanaButton onPressed: SnackBar function called (Terms not accepted?)");
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Please accept the terms and conditions to continue'),
-                                  backgroundColor: ghanaRed,
-                                ),
-                              );
-                            },
-                    // --- End Debug Print ---
+                    isLoading: _isLoading,
+                    onPressed: _acceptedTerms
+                        ? () {
+                            print("[RegisterScreen] GhanaButton onPressed: _handleSignUp assigned and called!");
+                            _handleSignUp();
+                          }
+                        : () {
+                            print("[RegisterScreen] GhanaButton onPressed: SnackBar function called (Terms not accepted?)");
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please accept the terms and conditions to continue'),
+                                backgroundColor: ghanaRed,
+                              ),
+                            );
+                          },
                   ),
                 ),
                 const SizedBox(height: 24),

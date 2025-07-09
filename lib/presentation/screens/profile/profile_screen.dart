@@ -99,68 +99,66 @@ class ProfileScreen extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final item = _menuItems[index];
                   // Ensure GhanaCard is implemented or replace with standard Card/InkWell
-                  return GhanaCard( // Assuming GhanaCard takes onTap
-                    elevation: 0.5,
+                  return InkWell(
                     onTap: () {
                       Navigator.pushNamed(context, item.route);
                     },
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: ghanaGold.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                    child: GhanaCard(
+                      elevation: 0.5,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: ghanaGold.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              item.icon,
+                              color: ghanaGold,
+                              size: 28,
+                            ),
                           ),
-                          child: Icon(
-                            item.icon,
-                            color: ghanaGold,
-                            size: 28,
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.title,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.title,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                item.description,
-                                style: TextStyle(
-                                  color: textSecondary,
-                                  fontSize: 14,
+                                SizedBox(height: 4),
+                                Text(
+                                  item.description,
+                                  style: TextStyle(
+                                    color: textSecondary,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
-                          color: textSecondary,
-                        ),
-                      ],
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: textSecondary,
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
               ),
               SizedBox(height: 40),
-              GhanaButton( // Assuming GhanaButton can take an icon
+              GhanaButton(
                 text: 'Log Out',
-                // Pass ref to the dialog function or read inside onPressed
                 onPressed: () => _showLogoutDialog(context, ref),
                 icon: Icons.logout,
-                width: MediaQuery.of(context).size.width * 0.9,
-                // Add style if needed, e.g., red color for logout
-                // style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               ),
               SizedBox(height: 20),
             ],

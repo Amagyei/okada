@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../../../core/constants/theme.dart';
 import '../../../core/widgets/ghana_widgets.dart';
@@ -225,70 +224,71 @@ class _RateDriversScreenState extends State<RateDriversScreen> {
             itemCount: _pendingRatings.length,
             itemBuilder: (context, index) {
               final driver = _pendingRatings[index];
-              return GhanaCard(
-                padding: EdgeInsets.all(16),
-                elevation: 1,
+              return InkWell(
                 onTap: () => _showRatingDialog(driver),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: ghanaGold.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.person,
-                              color: ghanaGold,
-                              size: 30,
+                child: GhanaCard(
+                  padding: EdgeInsets.all(16),
+                  elevation: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: ghanaGold.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.person,
+                                color: ghanaGold,
+                                size: 30,
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                driver.name,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  driver.name,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                driver.tripDate,
-                                style: TextStyle(
-                                  color: textSecondary,
-                                  fontSize: 14,
+                                SizedBox(height: 4),
+                                Text(
+                                  driver.tripDate,
+                                  style: TextStyle(
+                                    color: textSecondary,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                driver.tripRoute,
-                                style: TextStyle(
-                                  color: textSecondary,
-                                  fontSize: 14,
+                                SizedBox(height: 4),
+                                Text(
+                                  driver.tripRoute,
+                                  style: TextStyle(
+                                    color: textSecondary,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    GhanaButton(
-                      text: 'Rate Driver',
-                      onPressed: () => _showRatingDialog(driver),
-                      width: double.infinity,
-                    ),
-                  ],
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      GhanaButton(
+                        text: 'Rate Driver',
+                        onPressed: () => _showRatingDialog(driver),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -323,85 +323,88 @@ class _RateDriversScreenState extends State<RateDriversScreen> {
             itemCount: _completedRatings.length,
             itemBuilder: (context, index) {
               final driver = _completedRatings[index];
-              return GhanaCard(
-                padding: EdgeInsets.all(16),
-                elevation: 1,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: ghanaGold.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.person,
-                              color: ghanaGold,
-                              size: 30,
+              return InkWell(
+                onTap: () => _showRatingDialog(driver),
+                child: GhanaCard(
+                  padding: EdgeInsets.all(16),
+                  elevation: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: ghanaGold.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.person,
+                                color: ghanaGold,
+                                size: 30,
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                driver.name,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  driver.name,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                driver.tripDate,
-                                style: TextStyle(
-                                  color: textSecondary,
-                                  fontSize: 14,
+                                SizedBox(height: 4),
+                                Text(
+                                  driver.tripDate,
+                                  style: TextStyle(
+                                    color: textSecondary,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                driver.tripRoute,
-                                style: TextStyle(
-                                  color: textSecondary,
-                                  fontSize: 14,
+                                SizedBox(height: 4),
+                                Text(
+                                  driver.tripRoute,
+                                  style: TextStyle(
+                                    color: textSecondary,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        children: List.generate(5, (index) {
+                          return Icon(
+                            index < driver.rating.floor() 
+                                ? Icons.star 
+                                : (index < driver.rating ? Icons.star_half : Icons.star_border),
+                            color: ghanaGold,
+                            size: 20,
+                          );
+                        }),
+                      ),
+                      if (driver.feedback != null && driver.feedback!.isNotEmpty) ...[
+                        SizedBox(height: 8),
+                        Text(
+                          driver.feedback!,
+                          style: TextStyle(
+                            fontStyle: FontStyle.italic,
+                            color: textSecondary,
                           ),
                         ),
                       ],
-                    ),
-                    SizedBox(height: 12),
-                    Row(
-                      children: List.generate(5, (index) {
-                        return Icon(
-                          index < driver.rating.floor() 
-                              ? Icons.star 
-                              : (index < driver.rating ? Icons.star_half : Icons.star_border),
-                          color: ghanaGold,
-                          size: 20,
-                        );
-                      }),
-                    ),
-                    if (driver.feedback != null && driver.feedback!.isNotEmpty) ...[
-                      SizedBox(height: 8),
-                      Text(
-                        driver.feedback!,
-                        style: TextStyle(
-                          fontStyle: FontStyle.italic,
-                          color: textSecondary,
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
               );
             },

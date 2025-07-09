@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../../../core/constants/theme.dart';
 import '../../../core/widgets/ghana_widgets.dart';
@@ -177,9 +176,7 @@ class _SupportScreenState extends State<SupportScreen> {
       itemCount: _supportItems.length,
       itemBuilder: (context, index) {
         final item = _supportItems[index];
-        return GhanaCard(
-          padding: EdgeInsets.all(16),
-          elevation: 1,
+        return InkWell(
           onTap: () {
             if (index == 0) {
               _showContactDialog();
@@ -187,50 +184,54 @@ class _SupportScreenState extends State<SupportScreen> {
               // Navigate to specific support page based on index
             }
           },
-          child: Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: ghanaGreen.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+          child: GhanaCard(
+            padding: EdgeInsets.all(16),
+            elevation: 1,
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: ghanaGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    item.icon,
+                    color: ghanaGreen,
+                    size: 24,
+                  ),
                 ),
-                child: Icon(
-                  item.icon,
-                  color: ghanaGreen,
-                  size: 24,
-                ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      item.description,
-                      style: TextStyle(
-                        color: textSecondary,
-                        fontSize: 14,
+                      SizedBox(height: 4),
+                      Text(
+                        item.description,
+                        style: TextStyle(
+                          color: textSecondary,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: textSecondary,
-              ),
-            ],
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: textSecondary,
+                ),
+              ],
+            ),
           ),
         );
       },

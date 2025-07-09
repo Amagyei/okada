@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart'; // For picking images
 // Adjust import paths
-import 'package:okada_app/core/constants/theme.dart';
-import 'package:okada_app/core/widgets/ghana_widgets.dart';
-import 'package:okada_app/providers/auth_providers.dart';
-import 'package:okada_app/data/models/user_model.dart'; // Ensure User model is imported
+import 'package:okada/core/constants/theme.dart';
+import 'package:okada/core/widgets/ghana_widgets.dart';
+import 'package:okada/providers/auth_providers.dart';
+// Ensure User model is imported
 
 class PersonalInfoScreen extends ConsumerStatefulWidget {
   const PersonalInfoScreen({super.key});
@@ -66,7 +66,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
     setState(() {
       _isEditing = !_isEditing;
       if (!_isEditing) { // If cancelling edit, reset fields to original values
-        final user = ref.read(authNotifierProvider).user;
+        final user = ref.read(authNotifierProvider).user;     
         _firstNameController.text = user?.firstName ?? '';
         _lastNameController.text = user?.lastName ?? '';
         _emailController.text = user?.email ?? '';
@@ -367,8 +367,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
                   child: GhanaButton(
                     text: 'Save Changes',
                     isLoading: _isLoading,
-                    onPressed: _isLoading ? null : _saveChanges,
-                     width: MediaQuery.of(context).size.width * 0.8,
+                    onPressed: () => _saveChanges(),
                   ),
                 ),
             ],

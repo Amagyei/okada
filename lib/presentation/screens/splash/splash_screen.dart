@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 // Adjust import paths as needed
-import 'package:okada_app/core/constants/theme.dart';
-import 'package:okada_app/core/widgets/ghana_widgets.dart'; // Assuming LoadingBike is here
-import 'package:okada_app/routes.dart';
+import 'package:okada/core/constants/theme.dart';
+// Assuming LoadingBike is here
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

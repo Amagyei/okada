@@ -6,12 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
 import '../../../core/constants/theme.dart';
 import '../../../core/widgets/ghana_widgets.dart';
 import '../../../routes.dart';
-import 'package:okada_app/providers/auth_providers.dart';
+import 'package:okada/providers/auth_providers.dart';
 
 import 'widgets/quick_route_card.dart';
 import 'widgets/trip_card.dart';
 
-import 'package:okada_app/data/models/user_model.dart';
 
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -251,7 +250,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 SizedBox(height: 24),
                 GhanaButton(
                   text: 'Book a Ride Now',
-                  width: 200,
                   onPressed: () {
                     Navigator.pushNamed(context, AppRoutes.book);
                   },

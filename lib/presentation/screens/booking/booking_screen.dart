@@ -4,27 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:google_maps_flutter_ios/google_maps_flutter_ios.dart';
-import 'package:geolocator/geolocator.dart';
-// Import the places package for the TextField and Prediction model
-import 'package:google_places_flutter/google_places_flutter.dart';
-import 'package:google_places_flutter/model/prediction.dart';
+// Import our custom places autocomplete widget
+import 'package:okada/core/widgets/places_autocomplete_field.dart';
+import 'package:okada/data/services/places_service.dart';
 // Import Flutter's http package for Places Details API call
 import 'package:http/http.dart' as http;
 // Import dotenv to access environment variables
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 // Adjust import paths
-import 'package:okada_app/core/constants/theme.dart';
-import 'package:okada_app/core/widgets/ghana_widgets.dart';
-import 'package:okada_app/routes.dart';
-import 'package:okada_app/core/services/location_service.dart';
-import 'package:okada_app/core/services/ride_service.dart';
-import 'package:okada_app/providers/app_providers.dart';
-import 'package:okada_app/presentation/screens/booking/widgets/payment_method_selector.dart';
-import 'package:okada_app/presentation/screens/booking/widgets/driver_card.dart';
+import 'package:okada/core/constants/theme.dart';
+import 'package:okada/core/widgets/ghana_widgets.dart';
+import 'package:okada/routes.dart';
+import 'package:okada/core/services/ride_service.dart' as ride_service;
+import 'package:okada/providers/app_providers.dart';
+import 'package:okada/presentation/screens/booking/widgets/payment_method_selector.dart';
+import 'package:okada/presentation/screens/booking/widgets/driver_card.dart';
 // Geocoding package might still be used for reverse geocoding current location
-import 'package:geocoding/geocoding.dart';
-import 'dart:math'; // Import math for min function
+// Import math for min function
+// Import Ride model
 
 
 class BookingScreen extends ConsumerStatefulWidget {
@@ -43,6 +40,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   // State variables
   LatLng? _pickupLatLng;
   LatLng? _destinationLatLng;
+  String? _pickupAddress;
+  String? _destinationAddress;
   double? _estimatedFare;
   bool _isFetchingFare = false;
   bool _isRequestingRide = false; // For the "Request Okada Ride" button's loading state
@@ -57,7 +56,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   // *** New state variable for searching UI ***
   bool _isSearchingForDriver = false;
-  String? _currentRideId; // To store the ID of the requested ride for polling
+  int? _currentRideId; // Now int?
   Timer? _rideStatusTimer;
 
 
@@ -118,6 +117,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         if (setAsDefault || _pickupLatLng == null) {
            _pickupLatLng = coords;
            _pickupController.text = address;
+           _pickupAddress = address;
            _updateMarkersDirectly('pickup', coords, 'Pickup: $address');
            _checkShowRideOptions();
            if (setAsDefault && _destinationLatLng != null) _fetchEstimatedFare();
@@ -199,82 +199,30 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
   // --- End Reverse Geocoding Helper ---
 
-  // --- Unified Place Selection Handler (from Autocomplete) ---
-  void _onPlaceSelected(Prediction prediction, String fieldType) async {
-    if (_isFetchingPlaceDetails) return;
-    setState(() => _isFetchingPlaceDetails = true);
-
+  // --- Helper method to handle place selection ---
+  void _onPlaceSelected(PlaceDetails details, String fieldType) {
+    final latLng = LatLng(details.latitude, details.longitude);
+    final address = details.street.isNotEmpty ? '${details.street}, ${details.city}' : details.city;
+    
     if (fieldType == 'pickup') {
-      _pickupFocusNode.unfocus();
+      setState(() {
+        _pickupLatLng = latLng;
+        _pickupAddress = address;
+        _updateMarkersDirectly('pickup', latLng, 'Pickup: $address');
+      });
     } else {
-      _destinationFocusNode.unfocus();
+      setState(() {
+        _destinationLatLng = latLng;
+        _destinationAddress = address;
+        _updateMarkersDirectly('destination', latLng, 'Destination: $address');
+      });
     }
-    FocusScope.of(context).unfocus();
-
-    if (prediction.placeId == null) { _showError("Could not get place details (Missing Place ID)."); setState(() => _isFetchingPlaceDetails = false); return; }
-    if (_googleApiKey == 'MISSING_API_KEY') { _showError("Map search unavailable: API key missing."); setState(() => _isFetchingPlaceDetails = false); return; }
-
-    print("[BookingScreen] Fetching details for $fieldType - Place ID: ${prediction.placeId}");
-
-    final String placeId = prediction.placeId!;
-    final String fields = "geometry/location,name,formatted_address";
-    final Uri url = Uri.parse('https://maps.googleapis.com/maps/api/place/details/json?placeid=$placeId&fields=$fields&key=$_googleApiKey');
-
-    try {
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
-      if (!mounted) { setState(() => _isFetchingPlaceDetails = false); return; }
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['status'] == 'OK' && data['result']?['geometry']?['location'] != null) {
-          final location = data['result']['geometry']['location'];
-          final double? lat = location['lat'] as double?;
-          final double? lng = location['lng'] as double?;
-
-          if (lat != null && lng != null) {
-            final coords = LatLng(lat, lng);
-            final placeName = data['result']?['formatted_address'] ?? prediction.description ?? data['result']?['name'] ?? 'Unknown Address';
-            print("[BookingScreen] $fieldType details fetched: $placeName at $coords");
-
-            setState(() {
-              if (fieldType == 'pickup') {
-                _pickupLatLng = coords;
-                _pickupController.text = placeName;
-                _pickupController.selection = TextSelection.fromPosition(TextPosition(offset: _pickupController.text.length));
-                _updateMarkersDirectly('pickup', coords, 'Pickup: $placeName');
-              } else {
-                _destinationLatLng = coords;
-                _destinationController.text = placeName;
-                _destinationController.selection = TextSelection.fromPosition(TextPosition(offset: _destinationController.text.length));
-                _updateMarkersDirectly('destination', coords, 'Destination: $placeName');
-              }
-              _checkShowRideOptions();
-            });
-            _fetchEstimatedFare();
-          } else {
-             print("[BookingScreen] Places Details API Error: Lat/Lng missing.");
-            _showError("Failed to get location coordinates from API response.");
-          }
-        } else {
-          final String apiErrorMsg = data['error_message'] ?? data['status'] ?? 'Unknown API error';
-          print("[BookingScreen] Places Details API Error: $apiErrorMsg");
-          _showError("Failed to get location details: $apiErrorMsg");
-        }
-      } else {
-        print("[BookingScreen] Places Details HTTP Error: ${response.statusCode}");
-        _showError("Failed to get location details (HTTP ${response.statusCode}).");
-      }
-    } on TimeoutException catch (_) {
-        print("[BookingScreen] Error calling Place Details API: Timeout");
-        if (mounted) _showError("Getting location details timed out.");
-    } catch (e) {
-        print("[BookingScreen] Error calling Place Details API: $e");
-        if (mounted) _showError("Error getting location details: ${e.toString()}");
-    } finally {
-        if (mounted) setState(() => _isFetchingPlaceDetails = false);
-    }
+    
+    _checkShowRideOptions();
+    _fetchEstimatedFare();
   }
-  // --- End Place Selection Handler ---
+
+
 
   // --- Check if Ride Options should be shown ---
   void _checkShowRideOptions() {
@@ -295,7 +243,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     }
     print("[BookingScreen] Fetching estimated fare...");
     if (mounted) setState(() { _isFetchingFare = true; _estimatedFare = null; });
-    final rideService = ref.read(rideServiceProvider);
+    final rideService = ref.read(ride_service.rideServiceProvider);
     try {
        final fare = await rideService.getEstimatedFare(
          pickupCoords: _pickupLatLng!,
@@ -314,76 +262,102 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   // --- Ride Request ---
   Future<void> _requestRide() async {
-     final pickupAddress = _pickupController.text.trim();
-     final destinationAddress = _destinationController.text.trim();
+     if (_pickupLatLng == null || _pickupAddress == null) { _showError("Please select a valid pickup location."); return; }
+     if (_destinationLatLng == null || _destinationAddress == null) { _showError("Please select a valid destination."); return; }
+     if (_estimatedFare == null) { _showError("Could not get fare estimate. Please try again."); return; }
 
-     if (_pickupLatLng == null || pickupAddress.isEmpty || pickupAddress == "Current Location") {
-        _showError("Please enter or select a valid pickup location."); return;
-     }
-      if (_destinationLatLng == null || destinationAddress.isEmpty) {
-        _showError("Please enter or select a valid destination."); return;
-     }
-     if (_estimatedFare == null) {
-        _showError("Could not get fare estimate. Please try again."); return;
-     }
-
-     print("[BookingScreen] Attempting ride request...");
-     // Set _isRequestingRide for button, _isSearchingForDriver for UI switch
      setState(() { _isRequestingRide = true; });
-
-     final rideService = ref.read(rideServiceProvider);
+     final rideService = ref.read(ride_service.rideServiceProvider);
      try {
-        print("[BookingScreen] Calling createRideRequest Service...");
         final ride = await rideService.createRideRequest(
-           pickupCoords: _pickupLatLng!, pickupAddress: pickupAddress,
-           destinationCoords: _destinationLatLng!, destinationAddress: destinationAddress,
+           pickupCoords: _pickupLatLng!, pickupAddress: _pickupAddress!,
+           destinationCoords: _destinationLatLng!, destinationAddress: _destinationAddress!,
            estimatedFare: _estimatedFare!,
         );
         if (mounted) {
            print("[BookingScreen] Ride Requested! ID: ${ride.id}");
-           // *** This setState will trigger the UI change ***
            setState(() {
-             _isSearchingForDriver = true; // This is the key flag for UI switch
-             _currentRideId = ride.id.toString();
-             _isRequestingRide = false; // Reset button loading state
+             _isSearchingForDriver = true;
+             _currentRideId = ride.id; // Store the ride ID
+             _isRequestingRide = false;
            });
-           print("[BookingScreen] After setState in _requestRide: _isSearchingForDriver=$_isSearchingForDriver");
-           _startRideStatusPolling(ride.id);
+           _startRideStatusPolling(ride.id); // Start polling with the new ride ID
         }
      } catch (e) {
-        print("[BookingScreen] Ride request failed: $e");
         if (mounted) {
            _showError("Failed to request ride: ${e.toString().replaceFirst("Exception: ", "")}");
-           setState(() { _isRequestingRide = false; }); // Reset button loading on error
+           setState(() { _isRequestingRide = false; });
         }
      }
-     // _isRequestingRide is reset above or on error
   }
 
-  // --- Polling for Ride Status ---
+  // --- Polling for Ride Status (Updated to be real) ---
   void _startRideStatusPolling(int rideId) {
     print("[BookingScreen] Starting ride status polling for ride ID: $rideId");
     _rideStatusTimer?.cancel();
-    _rideStatusTimer = Timer.periodic(const Duration(seconds: 7), (timer) async {
-      if (!mounted || !_isSearchingForDriver) { // Check _isSearchingForDriver
+    _rideStatusTimer = Timer.periodic(const Duration(seconds: 8), (timer) async {
+      if (!mounted || !_isSearchingForDriver) {
         timer.cancel();
         print("[BookingScreen] Polling stopped (unmounted or no longer searching).");
         return;
       }
       print("[BookingScreen] Polling for ride status (ID: $rideId)...");
       try {
-        // TODO: Implement RideService.getRideDetails(rideId)
-        // final rideDetails = await ref.read(rideServiceProvider).getRideDetails(rideId);
-        if (timer.tick > 3) { // Simulate acceptance
-           print("[BookingScreen] SIMULATING DRIVER ACCEPTANCE for ride $rideId");
-           if (mounted) {
-             setState(() { _isSearchingForDriver = false; }); // Stop searching UI
-             _showError("Ride Accepted! (Simulated)"); // Replace with actual UI
-             timer.cancel(); // Stop polling
-             // TODO: Navigate to Ride Tracking Screen
-           }
+        final rideDetails = await ref.read(ride_service.rideServiceProvider).getRideDetails(rideId);
+        print("[BookingScreen] Polled ride status: ${rideDetails.status}");
+        
+        final statusUpper = rideDetails.status.toUpperCase();
+        if (statusUpper == 'ACCEPTED') {
+          print("[BookingScreen] RIDE ACCEPTED! Navigating to ongoing ride screen.");
+          timer.cancel();
+          if(mounted) {
+            Navigator.pushReplacementNamed(context, AppRoutes.ongoingRide, arguments: rideId);
+          }
+        } else if (statusUpper == 'NO_DRIVER_FOUND' || statusUpper.contains('CANCELLED')) {
+          print("[BookingScreen] Ride expired or was cancelled. Resetting UI.");
+          timer.cancel();
+          if (mounted) {
+            _showError("Sorry, no driver was found for your request.");
+            _resetBookingState();
+          }
         }
-      } catch (e) { print("[BookingScreen] Error polling ride status: $e"); }
+      } catch (e) {
+        print("[BookingScreen] Error polling ride status: $e");
+        // Don't stop polling on error, it might be a temporary network issue
+      }
+    });
+  }
+
+  // --- NEW: Cancel Ride Request Method ---
+  Future<void> _cancelRideRequest() async {
+    _rideStatusTimer?.cancel(); // Stop polling immediately
+    if (_currentRideId == null) {
+      setState(() => _isSearchingForDriver = false);
+      return;
+    }
+    
+    print("[BookingScreen] Cancelling ride request ID: $_currentRideId");
+    final rideService = ref.read(ride_service.rideServiceProvider);
+    try {
+      await rideService.cancelRide(_currentRideId!, "Cancelled by user");
+      _showError("Ride request cancelled.");
+    } catch (e) {
+      _showError("Could not cancel ride: ${e.toString().replaceFirst("Exception: ", "")}");
+    } finally {
+      if (mounted) {
+        _resetBookingState();
+      }
+    }
+  }
+  
+  // --- NEW: Helper to reset the screen state ---
+  void _resetBookingState() {
+    setState(() {
+      _isSearchingForDriver = false;
+      _isRequestingRide = false;
+      _currentRideId = null;
+      // Decide if you want to clear locations or just show options again
+      _checkShowRideOptions();
     });
   }
 
@@ -532,10 +506,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
        children: [
          Text(labelText, style: const TextStyle(fontWeight: FontWeight.w500, color: textPrimary)),
          const SizedBox(height: 8),
-         GooglePlaceAutoCompleteTextField(
-           textEditingController: controller,
+         PlacesAutocompleteField(
+           controller: controller,
            focusNode: focusNode,
-           googleAPIKey: _googleApiKey,
+           onPlaceSelected: (details) => _onPlaceSelected(details, fieldType),
+           countries: const ["GH"],
+           debounceTime: 400,
            inputDecoration: InputDecoration(
              hintText: "Search $labelText",
              prefixIcon: Icon(prefixIcon, color: ghanaGreen),
@@ -578,39 +554,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
              focusedBorder: OutlineInputBorder( borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: ghanaGreen, width: 1.5)),
              contentPadding: const EdgeInsets.only(left:16, right: 4, top: 14, bottom: 14),
            ),
-           debounceTime: 400, countries: const ["GH"], isLatLngRequired: false,
-           getPlaceDetailWithLatLng: (prediction) => _onPlaceSelected(prediction, fieldType),
-           itemClick: (prediction) {
-              controller.text = prediction.description ?? "";
-              controller.selection = TextSelection.fromPosition(TextPosition(offset: prediction.description?.length ?? 0));
-              if (fieldType == 'pickup') {
-                _pickupFocusNode.unfocus();
-              } else {
-                _destinationFocusNode.unfocus();
-              }
-           },
-           itemBuilder: (context, index, Prediction prediction) {
-              return Material(
-                 color: Colors.transparent,
-                 child: InkWell(
-                   onTap: () {
-                      _onPlaceSelected(prediction, fieldType);
-                   },
-                   child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Row(
-                         children: [
-                            const Icon(Icons.location_on_outlined, color: textSecondary),
-                            const SizedBox(width: 12),
-                            Expanded(child: Text(prediction.description ?? '...', style: const TextStyle(fontSize: 15), overflow: TextOverflow.ellipsis))
-                         ],
-                      ),
-                   ),
-                 ),
-              );
-           },
-           seperatedBuilder: Divider(height: 1, color: Colors.grey.shade200),
-           isCrossBtnShown: false,
          ),
        ],
      );
@@ -649,8 +592,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           text: 'Request Okada Ride',
           isLoading: _isRequestingRide,
           onPressed: (_isRequestingRide || _pickupLatLng == null || _destinationLatLng == null || _estimatedFare == null)
-              ? null
-              : _requestRide,
+              ? () {}
+              : () => _requestRide(),
         ),
       ],
     );
@@ -692,19 +635,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                   ),
                   const SizedBox(height: 24),
                   TextButton(
-                    onPressed: () {
-                      _rideStatusTimer?.cancel();
-                      setState(() {
-                        _isSearchingForDriver = false;
-                        _isRequestingRide = false;
-                        // Optionally reset locations or just show ride options again
-                        // For now, just hide searching UI and let user decide next
-                        if (_pickupLatLng != null && _destinationLatLng != null) {
-                           _showRideOptions = true;
-                        }
-                      });
-                      print("Ride search cancelled by user.");
-                    },
+                    onPressed: _cancelRideRequest,
                     child: const Text('Cancel Request', style: TextStyle(color: ghanaRed, fontWeight: FontWeight.w600)),
                   ),
                 ],

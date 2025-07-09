@@ -1,10 +1,11 @@
 // lib/core/services/auth_service.dart
-
 import 'dart:convert'; // For jsonEncode, jsonDecode
 import 'dart:io';     // For File, HttpStatus and SocketException
 import 'package:http/http.dart' as http; // Standard HTTP client
 import 'package:http_parser/http_parser.dart'; // For MediaType
 import 'package:path/path.dart' as p; // For getting file extension
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 // Adjust these import paths based on your project structure
 import '../../data/models/auth_response_model.dart';
@@ -16,7 +17,8 @@ import 'api_error_model.dart';
 
 class AuthService {
   // --- Configuration ---
-  final String _baseUrl; // Now injected via constructor
+  final String _baseUrl; 
+  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
 
   // --- Services ---
   final http.Client _client = createApiClient(); // Use intercepted client
@@ -76,10 +78,12 @@ class AuthService {
     final url = Uri.parse('$_baseUrl/auth/login/');
     print('AuthService: Attempting login for $phoneNumber using $_baseUrl');
     try {
+      final fcmToken = await _fcm.getToken();
+      print('AuthService: FCM token: $fcmToken');
       final response = await _client.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'phone_number': phoneNumber, 'password': password}),
+        body: json.encode({'phone_number': phoneNumber, 'password': password, 'fcm_token': fcmToken}),
       );
       final responseBody = _handleResponse(response);
       final authResponse = AuthResponse.fromJson(responseBody);
@@ -110,9 +114,12 @@ class AuthService {
     final url = Uri.parse('$_baseUrl/users/');
     print('AuthService: Attempting registration for $phoneNumber using $_baseUrl');
     try {
+      final fcmToken = await _fcm.getToken();
+      print('AuthService: FCM token: $fcmToken');
       final Map<String, dynamic> requestBody = {
         'username': username ?? phoneNumber, 'password': password, 'phone_number': phoneNumber,
         'first_name': firstName, 'last_name': lastName, 'user_type': userType,
+        'fcm_token': fcmToken,
       };
       if (email != null && email.isNotEmpty) { requestBody['email'] = email; }
 
@@ -341,6 +348,45 @@ class AuthService {
   Future<bool> isAuthenticated() async {
     final token = await _tokenStorageService.getAccessToken();
     return token != null && token.isNotEmpty;
+  }
+
+  // --- Update FCM Token Method ---
+  Future<void> updateFcmToken(String token) async {
+    final url = Uri.parse('$_baseUrl/users/me/fcm_token/');
+    print('AuthService: Updating FCM token');
+    try {
+      final response = await _client.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'fcm_token': token}),
+      );
+      _handleResponse(response);
+      print('AuthService: FCM token updated successfully');
+    } catch (e) {
+      print("AuthService: Failed to update FCM token - $e");
+      rethrow;
+    }
+  }
+
+
+  // A helper function to get the device token
+  Future<String?> getDeviceToken() async {
+    // This condition checks if you are in debug mode AND running on an iOS device/simulator
+    if (kDebugMode && Platform.isIOS) {
+      // Since you don't have a Developer Account, we bypass the real getToken() call
+      print("--- iOS-DEBUG: Returning a FAKE FCM token. Push notifications will NOT work. ---");
+      return "fake-ios-token-for-development-only";
+    }
+
+    // This is the normal code that will run on Android and in production
+    try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      print("FCM Token: $fcmToken");
+      return fcmToken;
+    } catch (e) {
+      print("An error occurred while getting FCM token: $e");
+      rethrow; // Rethrow the error to be handled by the login logic
+    }
   }
 
   // --- Dispose ---

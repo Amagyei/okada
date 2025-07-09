@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/theme.dart';
-import '../../../../core/widgets/ghana_widgets.dart';
 
 class ActiveTripCard extends StatelessWidget {
   final String from;

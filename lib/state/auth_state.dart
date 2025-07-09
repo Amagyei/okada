@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:okada_app/data/models/user_model.dart';
+import 'package:okada/data/models/user_model.dart';
 
 enum AuthStatus { unknown, authenticating, authenticated, unauthenticated, error }
 

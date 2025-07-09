@@ -3,75 +3,61 @@ import '../constants/theme.dart';
 
 class GhanaButton extends StatelessWidget {
   final String text;
-  final VoidCallback? onPressed;
-  final bool isLoading;
+  final VoidCallback onPressed;
   final IconData? icon;
-  final double width;
+  final Color? color;
+  final bool isLoading;
 
   const GhanaButton({
     super.key,
     required this.text,
     required this.onPressed,
-    this.isLoading = false,
     this.icon,
-    this.width = double.infinity,
+    this.color,
+    this.isLoading = false,
+  });
+
+  const GhanaButton.secondary({
+    super.key,
+    required this.text,
+    required this.onPressed,
+    this.icon,
+    this.color,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [ghanaGreen, Color(0xFF008E53)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+    return ElevatedButton(
+      onPressed: isLoading ? null : onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color ?? ghanaGreen,
+        foregroundColor: ghanaWhite,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: ghanaGreen.withOpacity(0.25),
-            offset: Offset(0, 4),
-            blurRadius: 8.0,
-          ),
-        ],
       ),
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          padding: EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-        ),
-        child: isLoading
-            ? SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: ghanaWhite,
-                  strokeWidth: 2.5,
-                ),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 20),
-                    SizedBox(width: 8),
-                  ],
-                  Text(
-                    text,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (isLoading)
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(ghanaWhite),
               ),
+            )
+          else ...[
+            if (icon != null) ...[
+              Icon(icon, size: 20),
+              const SizedBox(width: 8),
+            ],
+            Text(text),
+          ],
+        ],
       ),
     );
   }
@@ -162,32 +148,29 @@ class KentePatternPainter extends CustomPainter {
 
 class GhanaCard extends StatelessWidget {
   final Widget child;
-  final EdgeInsetsGeometry padding;
-  final double elevation;
-  final VoidCallback? onTap;
+  final EdgeInsetsGeometry? padding;
+  final Color? backgroundColor;
+  final double? elevation;
 
   const GhanaCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(16),
-    this.elevation = 2,
-    this.onTap,
+    this.padding,
+    this.backgroundColor,
+    this.elevation,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: elevation,
+      elevation: elevation ?? 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: padding,
-          child: child,
-        ),
+      color: backgroundColor ?? Theme.of(context).cardColor,
+      child: Padding(
+        padding: padding ?? const EdgeInsets.all(16),
+        child: child,
       ),
     );
   }
